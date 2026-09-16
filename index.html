@@ -1,114 +1,788 @@
-/**
- * WIP Tracker — Google Sheets backend.
- *
- * SETUP
- * 1. Go to https://sheets.new to create a fresh Google Sheet (or use an existing one).
- * 2. In the sheet, open Extensions > Apps Script.
- * 3. Delete any starter code and paste this whole file in.
- * 4. Click Deploy > New deployment > select type "Web app".
- *      - Execute as: Me
- *      - Who has access: Anyone
- * 5. Click Deploy, authorize the permissions it asks for, then copy the
- *    "Web app URL" it gives you (ends in /exec).
- * 6. Paste that URL into the app's "Sheet Sync" panel and click Push, then Pull.
- *
- * This script keeps two tabs in the spreadsheet:
- *   - "Movements": one row per movement, the source of truth for WIP.
- *   - "Parts":     one row per part code and its description.
- * Both are created automatically the first time the app pushes data.
- */
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>WIP Tracker — Box Plant</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+/* ---------------- Tokens ---------------- */
+:root{
+  --paper:#F6F1E6;
+  --paper-2:#EFE6D3;
+  --kraft:#B08463;
+  --kraft-dark:#8C6642;
+  --ink:#26241F;
+  --ink-soft:#5C564A;
+  --line:#D9CBAF;
+  --accent:#C1622B;
+  --ok:#4B7A51;
+  --ok-soft:#E3EDDF;
+  --warn:#B0791F;
+  --warn-soft:#F3E6C9;
+  --danger:#A6432F;
+  --card:#FFFDF8;
+  --shadow: 0 1px 0 rgba(38,36,31,.06);
+  --radius: 3px;
+  --font-head:'Oswald',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,sans-serif;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;}
+body{
+  background:var(--paper);
+  background-image:
+    repeating-linear-gradient(135deg, rgba(176,132,99,.05) 0px, rgba(176,132,99,.05) 2px, transparent 2px, transparent 14px);
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:40px;
+}
+h1,h2,h3,.label-cap{font-family:var(--font-head);}
+button, select, input{font-family:var(--font-body);}
+:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
-function doGet(e) {
-  var action = e.parameter.action || 'pull';
-  if (action === 'pull') {
-    return respond(pullData());
-  }
-  return respond({ ok: false, error: 'Unknown GET action: ' + action });
+/* ---------------- Layout shell ---------------- */
+.wrap{max-width:1100px;margin:0 auto;padding:0 14px;}
+
+header.top{
+  background:var(--ink);
+  color:var(--paper);
+  border-bottom:4px solid var(--kraft);
+}
+header.top .wrap{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 14px;gap:12px;flex-wrap:wrap;
+}
+.brand{display:flex;align-items:baseline;gap:10px;}
+.brand h1{
+  font-size:20px;letter-spacing:.02em;margin:0;font-weight:600;
+}
+.brand .plant-tag{
+  font-size:11px;color:var(--kraft);font-weight:600;letter-spacing:.08em;
+}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;}
+.btn{
+  border:1px solid var(--line);
+  background:var(--card);
+  color:var(--ink);
+  padding:8px 14px;
+  border-radius:var(--radius);
+  font-size:13px;font-weight:600;cursor:pointer;
+  transition:transform .08s ease, background .15s ease;
+}
+.btn:hover{background:var(--paper-2);}
+.btn:active{transform:scale(.97);}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
+.btn.primary:hover{background:#a94f22;}
+.btn.ghost{background:transparent;border-color:rgba(246,241,230,.35);color:var(--paper);}
+.btn.ghost:hover{background:rgba(246,241,230,.1);}
+.btn.small{padding:5px 10px;font-size:12px;}
+.btn[disabled]{opacity:.45;cursor:not-allowed;}
+
+/* ---------------- Sync status ---------------- */
+.sync-pill{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--paper);opacity:.85;
+  padding:6px 10px;border:1px solid rgba(246,241,230,.25);border-radius:20px;
+}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--warn);}
+.dot.on{background:#7FBF7B;}
+.dot.off{background:var(--danger);}
+
+/* ---------------- Selector row ---------------- */
+.selector-row{
+  display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;
+  margin:22px 0 6px;
+}
+.field{display:flex;flex-direction:column;gap:4px;min-width:180px;}
+.field.grow{flex:1;}
+.label-cap{
+  font-size:11px;letter-spacing:.06em;text-transform:uppercase;
+  color:var(--ink-soft);font-weight:600;
+}
+select, input[type=text], input[type=number], input[type=date], textarea{
+  border:1px solid var(--line);
+  background:var(--card);
+  padding:9px 10px;
+  border-radius:var(--radius);
+  font-size:14px;color:var(--ink);
+  width:100%;
+}
+select:focus, input:focus, textarea:focus{border-color:var(--accent);}
+.part-meta{font-size:12px;color:var(--ink-soft);padding:8px 0 2px;}
+.part-meta b{color:var(--ink);}
+
+/* ---------------- Pipeline ---------------- */
+.pipeline-scroll{
+  overflow-x:auto;padding:22px 0 14px;
+  -webkit-overflow-scrolling:touch;
+}
+.pipeline{
+  display:flex;align-items:stretch;gap:0;min-width:max-content;
+}
+.stage-card{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  min-width:150px;
+  padding:14px 14px 12px;
+  position:relative;
+}
+.stage-card.zero{opacity:.55;}
+.stage-card .stage-name{
+  font-family:var(--font-head);font-size:13px;font-weight:600;
+  letter-spacing:.02em;color:var(--ink);margin:0 0 8px;
+  min-height:34px;
+}
+.stage-card .stage-qty{
+  font-size:28px;font-weight:700;font-family:var(--font-head);color:var(--kraft-dark);
+  line-height:1;
+}
+.stage-card .stage-unit{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+.stage-card .stage-sub{
+  margin-top:8px;font-size:11px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:6px;
+}
+.stage-card .stage-sub div{display:flex;justify-content:space-between;padding:1px 0;}
+.arrow{
+  display:flex;align-items:center;justify-content:center;
+  width:26px;flex:0 0 26px;color:var(--kraft);font-size:16px;
+}
+.stage-card.final{border-color:var(--ok);}
+.stage-card.final .stage-qty{color:var(--ok);}
+
+/* ---------------- Panels ---------------- */
+.panel{
+  background:var(--card);
+  border:1px solid var(--line);
+  border-radius:var(--radius);
+  padding:18px;margin-top:16px;
+}
+.panel h2{
+  font-size:15px;margin:0 0 14px;font-weight:600;letter-spacing:.02em;
+  display:flex;align-items:center;gap:8px;
+}
+.panel h2 .idx{
+  display:inline-flex;align-items:center;justify-content:center;
+  width:20px;height:20px;border-radius:50%;background:var(--kraft);color:#fff;
+  font-size:11px;font-family:var(--font-body);
+}
+.grid-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;}
+.grid-form .span2{grid-column:span 2;}
+.form-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
+.hint{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+.hint.err{color:var(--danger);font-weight:600;}
+.hint.ok{color:var(--ok);font-weight:600;}
+
+/* ---------------- Table ---------------- */
+.table-wrap{overflow-x:auto;margin-top:4px;}
+table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px;}
+thead th{
+  text-align:left;font-family:var(--font-head);font-weight:600;font-size:11px;
+  letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);
+  border-bottom:2px solid var(--line);padding:8px 10px;white-space:nowrap;
+}
+tbody td{padding:8px 10px;border-bottom:1px solid var(--paper-2);white-space:nowrap;}
+tbody tr:hover{background:var(--paper-2);}
+.tag{
+  display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;
+}
+.tag.in{background:var(--ok-soft);color:var(--ok);}
+.tag.plan{background:var(--warn-soft);color:var(--warn);}
+.row-del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;font-weight:600;}
+.empty-row td{color:var(--ink-soft);text-align:center;padding:22px;}
+
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
+.filters .field{min-width:140px;}
+
+/* ---------------- Modal ---------------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(38,36,31,.5);display:none;
+  align-items:center;justify-content:center;z-index:50;padding:16px;
+}
+.modal-backdrop.open{display:flex;}
+.modal{
+  background:var(--card);border-radius:var(--radius);max-width:480px;width:100%;
+  padding:22px;max-height:90vh;overflow:auto;
+}
+.modal h3{margin:0 0 4px;font-size:17px;}
+.modal p.desc{font-size:13px;color:var(--ink-soft);margin:0 0 16px;}
+.modal .field{margin-bottom:12px;}
+.modal-close-row{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;}
+
+.toast{
+  position:fixed;bottom:18px;left:50%;transform:translateX(-50%);
+  background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:20px;
+  font-size:13px;z-index:60;display:none;box-shadow:0 4px 14px rgba(0,0,0,.25);
+}
+.toast.show{display:block;animation:fadeUp .25s ease;}
+@keyframes fadeUp{from{opacity:0;transform:translate(-50%,8px);}to{opacity:1;transform:translate(-50%,0);}}
+
+footer{
+  text-align:center;font-size:11px;color:var(--ink-soft);padding:26px 14px 4px;
 }
 
-function doPost(e) {
-  try {
-    var body = JSON.parse(e.postData.contents);
-    if (body.action === 'push') {
-      pushData(body.parts || [], body.movements || []);
-      return respond({ ok: true });
+@media (max-width:640px){
+  .brand h1{font-size:17px;}
+  .selector-row{flex-direction:column;align-items:stretch;}
+  .field{min-width:0;}
+  .panel{padding:14px;}
+}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="brand">
+      <h1>WIP Tracker</h1>
+      <span class="plant-tag">CORRUGATED BOX PLANT</span>
+    </div>
+    <div class="top-actions">
+      <span class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncLabel">Local only</span></span>
+      <button class="btn ghost small" id="btnSettings">Sheet Sync</button>
+      <button class="btn ghost small" id="btnExport">Export Excel</button>
+    </div>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- Part code selector -->
+  <div class="selector-row">
+    <div class="field grow">
+      <label class="label-cap" for="partSelect">Part / Item Code</label>
+      <select id="partSelect"></select>
+    </div>
+    <div class="field">
+      <label class="label-cap">&nbsp;</label>
+      <button class="btn" id="btnNewPart">+ New Part Code</button>
+    </div>
+  </div>
+  <div class="part-meta" id="partMeta"></div>
+
+  <!-- Pipeline -->
+  <div class="pipeline-scroll">
+    <div class="pipeline" id="pipeline"></div>
+  </div>
+
+  <!-- Movement entry -->
+  <div class="panel">
+    <h2><span class="idx">1</span> Record Movement</h2>
+    <div class="grid-form" id="moveForm">
+      <div class="field">
+        <label class="label-cap">Move To Stage</label>
+        <select id="toStage"></select>
+      </div>
+      <div class="field" id="processField" style="display:none;">
+        <label class="label-cap">Process / Machine</label>
+        <select id="processSelect"></select>
+      </div>
+      <div class="field">
+        <label class="label-cap">Quantity</label>
+        <input type="number" id="moveQty" min="1" placeholder="e.g. 500">
+      </div>
+      <div class="field">
+        <label class="label-cap">Date</label>
+        <input type="date" id="moveDate">
+      </div>
+      <div class="field span2">
+        <label class="label-cap">Remarks (optional)</label>
+        <input type="text" id="moveRemarks" placeholder="e.g. shortage, new item, urgent order">
+      </div>
+    </div>
+    <div class="hint" id="moveHint">Select a stage to move stock into. Available balance at the previous stage will be deducted automatically.</div>
+    <div class="form-actions">
+      <button class="btn primary" id="btnAddMove">Record Movement</button>
+      <button class="btn" id="btnUndo">Undo Last</button>
+    </div>
+  </div>
+
+  <!-- Ledger -->
+  <div class="panel">
+    <h2><span class="idx">2</span> Movement Ledger</h2>
+    <div class="filters">
+      <div class="field">
+        <label class="label-cap">Filter Part Code</label>
+        <select id="filterPart"></select>
+      </div>
+      <div class="field">
+        <label class="label-cap">Filter Stage</label>
+        <select id="filterStage"></select>
+      </div>
+      <div class="field">
+        <label class="label-cap">From Date</label>
+        <input type="date" id="filterFrom">
+      </div>
+      <div class="field">
+        <label class="label-cap">&nbsp;</label>
+        <button class="btn small" id="btnClearFilters">Clear filters</button>
+      </div>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Date</th><th>Part Code</th><th>From</th><th>To</th><th>Process</th><th>Qty</th><th>Remarks</th><th></th></tr>
+        </thead>
+        <tbody id="ledgerBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Stock summary (all parts) -->
+  <div class="panel">
+    <h2><span class="idx">3</span> Stock Summary — All Part Codes</h2>
+    <div class="table-wrap">
+      <table id="summaryTable">
+        <thead><tr id="summaryHead"></tr></thead>
+        <tbody id="summaryBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <footer>WIP Tracker · data stored on this device · sync to Google Sheets from the Sheet Sync panel</footer>
+</div>
+
+<!-- New part modal -->
+<div class="modal-backdrop" id="modalNewPart">
+  <div class="modal">
+    <h3>Add new part code</h3>
+    <p class="desc">Create a new item code to start tracking its WIP through the plant.</p>
+    <div class="field">
+      <label class="label-cap">Part / Item Code</label>
+      <input type="text" id="newPartCode" placeholder="e.g. 61031994">
+    </div>
+    <div class="field">
+      <label class="label-cap">Description (optional)</label>
+      <input type="text" id="newPartDesc" placeholder="e.g. Four wheeler carton, plate">
+    </div>
+    <div class="hint err" id="newPartErr" style="display:none;"></div>
+    <div class="modal-close-row">
+      <button class="btn" id="btnCancelPart">Cancel</button>
+      <button class="btn primary" id="btnSavePart">Add Part Code</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sheet sync modal -->
+<div class="modal-backdrop" id="modalSync">
+  <div class="modal">
+    <h3>Google Sheet Sync</h3>
+    <p class="desc">Paste the Web App URL of the connected Google Apps Script (see README for setup). Data pushes and pulls on demand — nothing syncs automatically.</p>
+    <div class="field">
+      <label class="label-cap">Apps Script Web App URL</label>
+      <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/AKfycbyh96DqwaAVmAZQ9mAIJ2ptajWS3a8Ca52CUYY5ibDkkHnHidVcxklFBIGDLbVDJ1Un2g/exec">
+    </div>
+    <div class="hint" id="syncHint">Not connected.</div>
+    <div class="modal-close-row">
+      <button class="btn" id="btnCloseSync">Close</button>
+      <button class="btn" id="btnPull">Pull from Sheet</button>
+      <button class="btn primary" id="btnPush">Push to Sheet</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* =====================================================================
+   WIP TRACKER — data model & logic
+   ===================================================================== */
+
+const STORAGE_KEY = 'wip_tracker_v1';
+
+// Fixed process pipeline for a corrugated box part code.
+// 'process' stages carry a sub-selection (machine / route) recorded on the movement.
+const STAGES = [
+  { key:'ppc',        label:'PPC Plan' },
+  { key:'corrugation', label:'Corrugation' },
+  { key:'printing',    label:'Printing', options:['GD','AD','Jumbo'] },
+  { key:'finishing',   label:'Finishing', options:['Auto Stitching','Semi Auto Stitching','Insun (Gluing/Stitching)','Manual Gluing'] },
+  { key:'packaging',   label:'Packaging' },
+  { key:'fg',          label:'FG Stock' },
+];
+
+function loadState(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if(raw) return JSON.parse(raw);
+  }catch(e){}
+  return { parts: [], movements: [], sheetUrl: '' };
+}
+function saveState(){
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){
+    toast('Could not save locally — storage may be full or blocked.');
+  }
+}
+
+let state = loadState();
+let selectedPart = state.parts[0] ? state.parts[0].code : null;
+let lastMovementId = null;
+
+/* ---------------- helpers ---------------- */
+function uid(){ return 'm' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function partsMovements(code){
+  return state.movements.filter(m=>m.partCode===code);
+}
+// Balance at each stage for a part code, based on ledger of movements.
+function computeBalances(code){
+  const bal = {}; STAGES.forEach(s=>bal[s.key]=0);
+  const subBal = {}; STAGES.forEach(s=>{ if(s.options){ subBal[s.key]={}; s.options.forEach(o=>subBal[s.key][o]=0); } });
+  partsMovements(code).sort((a,b)=>a.ts-b.ts).forEach(m=>{
+    if(m.from) bal[m.from] -= m.qty;
+    bal[m.to] += m.qty;
+    if(m.process && subBal[m.to]) subBal[m.to][m.process] = (subBal[m.to][m.process]||0) + m.qty;
+    if(m.from && m.process && subBal[m.from]) subBal[m.from][m.process] = (subBal[m.from][m.process]||0) - m.qty;
+  });
+  return { bal, subBal };
+}
+function stageLabel(key){
+  if(!key) return 'New Production';
+  const s = STAGES.find(s=>s.key===key);
+  return s ? s.label : key;
+}
+function nextStageKey(fromKey){
+  const idx = STAGES.findIndex(s=>s.key===fromKey);
+  if(idx===-1 || idx===STAGES.length-1) return null;
+  return STAGES[idx+1].key;
+}
+
+/* =====================================================================
+   RENDER
+   ===================================================================== */
+function renderPartSelect(){
+  const sel = document.getElementById('partSelect');
+  const filterSel = document.getElementById('filterPart');
+  sel.innerHTML=''; filterSel.innerHTML='<option value="">All part codes</option>';
+  if(state.parts.length===0){
+    sel.innerHTML = '<option value="">No part codes yet — add one</option>';
+  }
+  state.parts.slice().sort((a,b)=>a.code.localeCompare(b.code)).forEach(p=>{
+    const o1 = document.createElement('option'); o1.value=p.code; o1.textContent=p.code + (p.desc?' — '+p.desc:'');
+    sel.appendChild(o1);
+    const o2 = o1.cloneNode(true); filterSel.appendChild(o2);
+  });
+  if(selectedPart) sel.value = selectedPart;
+}
+function renderPartMeta(){
+  const meta = document.getElementById('partMeta');
+  const p = state.parts.find(p=>p.code===selectedPart);
+  if(!p){ meta.textContent=''; return; }
+  const moves = partsMovements(p.code).length;
+  meta.innerHTML = `<b>${p.desc||'No description'}</b> &nbsp;·&nbsp; ${moves} movement${moves===1?'':'s'} recorded`;
+}
+function renderPipeline(){
+  const el = document.getElementById('pipeline');
+  el.innerHTML='';
+  if(!selectedPart){ el.innerHTML = '<div class="hint">Add a part code to see its production pipeline.</div>'; return; }
+  const { bal, subBal } = computeBalances(selectedPart);
+  STAGES.forEach((s,i)=>{
+    if(i>0){
+      const arrow = document.createElement('div'); arrow.className='arrow'; arrow.textContent='→';
+      el.appendChild(arrow);
     }
-    return respond({ ok: false, error: 'Unknown POST action: ' + body.action });
-  } catch (err) {
-    return respond({ ok: false, error: err.message });
+    const qty = bal[s.key]||0;
+    const card = document.createElement('div');
+    card.className = 'stage-card' + (qty===0?' zero':'') + (s.key==='fg'?' final':'');
+    let subHtml='';
+    if(s.options){
+      subHtml = '<div class="stage-sub">' + s.options.map(o=>`<div><span>${o}</span><span>${subBal[s.key][o]||0}</span></div>`).join('') + '</div>';
+    }
+    card.innerHTML = `<p class="stage-name">${s.label}</p><div class="stage-qty">${qty}</div><div class="stage-unit">units in WIP</div>${subHtml}`;
+    el.appendChild(card);
+  });
+}
+function renderToStageOptions(){
+  const sel = document.getElementById('toStage');
+  sel.innerHTML = '<option value="ppc">PPC Plan (new production)</option>' +
+    STAGES.slice(1).map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  onToStageChange();
+}
+function onToStageChange(){
+  const key = document.getElementById('toStage').value;
+  const s = STAGES.find(s=>s.key===key);
+  const procField = document.getElementById('processField');
+  const procSel = document.getElementById('processSelect');
+  if(s && s.options){
+    procField.style.display='';
+    procSel.innerHTML = s.options.map(o=>`<option value="${o}">${o}</option>`).join('');
+  } else {
+    procField.style.display='none';
+  }
+  const idx = STAGES.findIndex(s=>s.key===key);
+  const fromLabel = idx>0 ? STAGES[idx-1].label : null;
+  const hint = document.getElementById('moveHint');
+  if(!selectedPart){
+    hint.textContent = 'Select or add a part code first.'; hint.className='hint err'; return;
+  }
+  if(!fromLabel){
+    hint.textContent = 'This adds fresh production quantity into PPC Plan.'; hint.className='hint';
+  } else {
+    const { bal } = computeBalances(selectedPart);
+    const avail = bal[STAGES[idx-1].key]||0;
+    hint.innerHTML = `Will deduct from <b>${fromLabel}</b> balance (currently <b>${avail}</b>) and add to <b>${s.label}</b>.`;
+    hint.className='hint';
   }
 }
-
-function respond(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj))
-    .setMimeType(ContentService.MimeType.JSON);
-}
-
-function getSheet(name, headers) {
-  var ss = SpreadsheetApp.getActiveSpreadsheet();
-  var sh = ss.getSheetByName(name);
-  if (!sh) {
-    sh = ss.insertSheet(name);
-    sh.appendRow(headers);
-    sh.setFrozenRows(1);
+function renderLedger(){
+  const body = document.getElementById('ledgerBody');
+  const fPart = document.getElementById('filterPart').value;
+  const fStage = document.getElementById('filterStage').value;
+  const fFrom = document.getElementById('filterFrom').value;
+  let rows = state.movements.slice().sort((a,b)=>b.ts-a.ts);
+  if(fPart) rows = rows.filter(m=>m.partCode===fPart);
+  if(fStage) rows = rows.filter(m=>m.to===fStage || m.from===fStage);
+  if(fFrom) rows = rows.filter(m=>m.date >= fFrom);
+  body.innerHTML='';
+  if(rows.length===0){
+    body.innerHTML = '<tr class="empty-row"><td colspan="8">No movements match these filters yet.</td></tr>';
+    return;
   }
-  return sh;
+  rows.slice(0,300).forEach(m=>{
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${m.date}</td>
+      <td>${m.partCode}</td>
+      <td>${m.from ? `<span class="tag in">${stageLabel(m.from)}</span>` : `<span class="tag plan">New</span>`}</td>
+      <td>${stageLabel(m.to)}</td>
+      <td>${m.process||'—'}</td>
+      <td>${m.qty}</td>
+      <td>${m.remarks||''}</td>
+      <td><button class="row-del" data-id="${m.id}">Delete</button></td>`;
+    body.appendChild(tr);
+  });
+}
+function renderStageFilterOptions(){
+  const sel = document.getElementById('filterStage');
+  sel.innerHTML = '<option value="">All stages</option>' + STAGES.map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+}
+function renderSummary(){
+  const head = document.getElementById('summaryHead');
+  const body = document.getElementById('summaryBody');
+  head.innerHTML = '<th>Part Code</th>' + STAGES.map(s=>`<th>${s.label}</th>`).join('') + '<th>Description</th>';
+  body.innerHTML='';
+  if(state.parts.length===0){
+    body.innerHTML = '<tr class="empty-row"><td colspan="'+(STAGES.length+2)+'">No part codes yet.</td></tr>';
+    return;
+  }
+  state.parts.slice().sort((a,b)=>a.code.localeCompare(b.code)).forEach(p=>{
+    const { bal } = computeBalances(p.code);
+    const tr = document.createElement('tr');
+    tr.innerHTML = `<td><b>${p.code}</b></td>` + STAGES.map(s=>`<td>${bal[s.key]||0}</td>`).join('') + `<td>${p.desc||''}</td>`;
+    body.appendChild(tr);
+  });
+}
+function renderSyncStatus(){
+  const dot = document.getElementById('syncDot');
+  const label = document.getElementById('syncLabel');
+  if(state.sheetUrl){
+    dot.className='dot on'; label.textContent = 'Sheet connected';
+  } else {
+    dot.className='dot off'; label.textContent = 'Local only';
+  }
+  document.getElementById('sheetUrl').value = state.sheetUrl || '';
+  document.getElementById('syncHint').textContent = state.sheetUrl ? 'Connected. Use Pull / Push to sync.' : 'Not connected.';
+}
+function renderAll(){
+  renderPartSelect(); renderPartMeta(); renderPipeline(); renderToStageOptions();
+  renderStageFilterOptions(); renderLedger(); renderSummary(); renderSyncStatus();
 }
 
-function pullData() {
-  var movSheet = getSheet('Movements', ['id','partCode','from','to','process','qty','date','remarks','ts']);
-  var partSheet = getSheet('Parts', ['code','desc','createdAt']);
+/* =====================================================================
+   EVENTS
+   ===================================================================== */
+document.getElementById('partSelect').addEventListener('change', e=>{
+  selectedPart = e.target.value || null;
+  renderPartMeta(); renderPipeline(); onToStageChange();
+});
+document.getElementById('toStage').addEventListener('change', onToStageChange);
 
-  var movRows = movSheet.getDataRange().getValues();
-  var movements = [];
-  for (var i = 1; i < movRows.length; i++) {
-    var r = movRows[i];
-    if (!r[0]) continue;
-    movements.push({
-      id: String(r[0]), partCode: String(r[1]), from: r[2] || null, to: r[3],
-      process: r[4] || null, qty: Number(r[5]), date: formatDate(r[6]), remarks: r[7] || '', ts: Number(r[8]) || Date.now()
+document.getElementById('btnNewPart').addEventListener('click', ()=>{
+  document.getElementById('newPartCode').value='';
+  document.getElementById('newPartDesc').value='';
+  document.getElementById('newPartErr').style.display='none';
+  document.getElementById('modalNewPart').classList.add('open');
+});
+document.getElementById('btnCancelPart').addEventListener('click', ()=>document.getElementById('modalNewPart').classList.remove('open'));
+document.getElementById('btnSavePart').addEventListener('click', ()=>{
+  const code = document.getElementById('newPartCode').value.trim();
+  const desc = document.getElementById('newPartDesc').value.trim();
+  const err = document.getElementById('newPartErr');
+  if(!code){ err.textContent='Enter a part code.'; err.style.display='block'; return; }
+  if(state.parts.some(p=>p.code===code)){ err.textContent='This part code already exists.'; err.style.display='block'; return; }
+  state.parts.push({ code, desc, createdAt: Date.now() });
+  saveState(); selectedPart = code;
+  document.getElementById('modalNewPart').classList.remove('open');
+  renderAll();
+  toast('Part code added: ' + code);
+});
+
+document.getElementById('btnAddMove').addEventListener('click', ()=>{
+  const hint = document.getElementById('moveHint');
+  if(!selectedPart){ hint.textContent='Select or add a part code first.'; hint.className='hint err'; return; }
+  const toKey = document.getElementById('toStage').value;
+  const idx = STAGES.findIndex(s=>s.key===toKey);
+  const fromKey = idx>0 ? STAGES[idx-1].key : null;
+  const qty = parseFloat(document.getElementById('moveQty').value);
+  const date = document.getElementById('moveDate').value || todayStr();
+  const remarks = document.getElementById('moveRemarks').value.trim();
+  const s = STAGES[idx];
+  const process = (s.options) ? document.getElementById('processSelect').value : null;
+
+  if(!qty || qty<=0){ hint.textContent='Enter a quantity greater than zero.'; hint.className='hint err'; return; }
+  if(fromKey){
+    const { bal } = computeBalances(selectedPart);
+    const avail = bal[fromKey]||0;
+    if(qty > avail){
+      hint.innerHTML = `Only <b>${avail}</b> available at ${stageLabel(fromKey)}. Reduce the quantity or record production there first.`;
+      hint.className='hint err';
+      return;
+    }
+  }
+  const m = { id: uid(), partCode: selectedPart, from: fromKey, to: toKey, process, qty, date, remarks, ts: Date.now(), dirty:true };
+  state.movements.push(m);
+  lastMovementId = m.id;
+  saveState();
+  document.getElementById('moveQty').value='';
+  document.getElementById('moveRemarks').value='';
+  renderPipeline(); onToStageChange(); renderLedger(); renderSummary();
+  toast('Movement recorded.');
+});
+
+document.getElementById('btnUndo').addEventListener('click', ()=>{
+  if(!lastMovementId){ toast('Nothing to undo.'); return; }
+  state.movements = state.movements.filter(m=>m.id!==lastMovementId);
+  saveState(); lastMovementId=null;
+  renderPipeline(); onToStageChange(); renderLedger(); renderSummary();
+  toast('Last movement removed.');
+});
+
+document.getElementById('ledgerBody').addEventListener('click', e=>{
+  if(e.target.classList.contains('row-del')){
+    const id = e.target.getAttribute('data-id');
+    if(confirm('Delete this movement? This will change WIP balances.')){
+      state.movements = state.movements.filter(m=>m.id!==id);
+      saveState();
+      renderPipeline(); onToStageChange(); renderLedger(); renderSummary();
+    }
+  }
+});
+['filterPart','filterStage','filterFrom'].forEach(id=>{
+  document.getElementById(id).addEventListener('change', renderLedger);
+});
+document.getElementById('btnClearFilters').addEventListener('click', ()=>{
+  document.getElementById('filterPart').value='';
+  document.getElementById('filterStage').value='';
+  document.getElementById('filterFrom').value='';
+  renderLedger();
+});
+
+/* ---------------- Export to Excel ---------------- */
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const wb = XLSX.utils.book_new();
+
+  // Sheet 1: stock summary (matches the plant's original snapshot format)
+  const head = ['ITEM CODE', ...STAGES.map(s=>s.label), 'DESCRIPTION'];
+  const rows = state.parts.map(p=>{
+    const { bal } = computeBalances(p.code);
+    return [p.code, ...STAGES.map(s=>bal[s.key]||0), p.desc||''];
+  });
+  const ws1 = XLSX.utils.aoa_to_sheet([[`WIP STOCK SUMMARY — ${todayStr()}`],[],head, ...rows]);
+  XLSX.utils.book_append_sheet(wb, ws1, 'Stock Summary');
+
+  // Sheet 2: full movement ledger
+  const ledgerHead = ['Date','Part Code','From Stage','To Stage','Process','Qty','Remarks'];
+  const ledgerRows = state.movements.slice().sort((a,b)=>a.ts-b.ts)
+    .map(m=>[m.date, m.partCode, stageLabel(m.from), stageLabel(m.to), m.process||'', m.qty, m.remarks||'']);
+  const ws2 = XLSX.utils.aoa_to_sheet([ledgerHead, ...ledgerRows]);
+  XLSX.utils.book_append_sheet(wb, ws2, 'Movement Ledger');
+
+  // Sheet 3: part code master
+  const ws3 = XLSX.utils.aoa_to_sheet([['Part Code','Description'], ...state.parts.map(p=>[p.code,p.desc||''])]);
+  XLSX.utils.book_append_sheet(wb, ws3, 'Part Codes');
+
+  XLSX.writeFile(wb, `WIP_STOCK_${todayStr()}.xlsx`);
+  toast('Excel file downloaded.');
+});
+
+/* ---------------- Google Sheet sync ---------------- */
+document.getElementById('btnSettings').addEventListener('click', ()=>document.getElementById('modalSync').classList.add('open'));
+document.getElementById('btnCloseSync').addEventListener('click', ()=>document.getElementById('modalSync').classList.remove('open'));
+
+function currentSheetUrl(){ return document.getElementById('sheetUrl').value.trim(); }
+
+document.getElementById('btnPush').addEventListener('click', async ()=>{
+  const url = currentSheetUrl();
+  if(!url){ toast('Paste your Web App URL first.'); return; }
+  state.sheetUrl = url; saveState();
+  const dirty = state.movements.filter(m=>m.dirty);
+  const btn = document.getElementById('btnPush'); btn.disabled = true; btn.textContent='Pushing…';
+  try{
+    const payload = { action:'push', parts: state.parts, movements: state.movements };
+    const res = await fetch(url, {
+      method:'POST',
+      headers: { 'Content-Type':'text/plain;charset=utf-8' }, // avoids CORS preflight on Apps Script
+      body: JSON.stringify(payload)
     });
+    const data = await res.json();
+    if(data.ok){
+      state.movements.forEach(m=>delete m.dirty);
+      saveState();
+      document.getElementById('syncHint').textContent = 'Pushed ' + (dirty.length) + ' new movement(s) successfully.';
+      toast('Pushed to Google Sheet.');
+    } else {
+      throw new Error(data.error || 'Unknown error');
+    }
+  }catch(err){
+    document.getElementById('syncHint').textContent = 'Push failed: ' + err.message + '. Check the URL and that the script is deployed for "Anyone".';
+    toast('Push failed — see Sheet Sync panel.');
   }
+  btn.disabled=false; btn.textContent='Push to Sheet';
+  renderSyncStatus();
+});
 
-  var partRows = partSheet.getDataRange().getValues();
-  var parts = [];
-  for (var j = 1; j < partRows.length; j++) {
-    var pr = partRows[j];
-    if (!pr[0]) continue;
-    parts.push({ code: String(pr[0]), desc: pr[1] || '', createdAt: Number(pr[2]) || Date.now() });
+document.getElementById('btnPull').addEventListener('click', async ()=>{
+  const url = currentSheetUrl();
+  if(!url){ toast('Paste your Web App URL first.'); return; }
+  state.sheetUrl = url; saveState();
+  const btn = document.getElementById('btnPull'); btn.disabled = true; btn.textContent='Pulling…';
+  try{
+    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'action=pull');
+    const data = await res.json();
+    if(data.ok){
+      // Merge by id — remote wins for anything not present locally.
+      const knownIds = new Set(state.movements.map(m=>m.id));
+      const knownParts = new Set(state.parts.map(p=>p.code));
+      (data.movements||[]).forEach(m=>{ if(!knownIds.has(m.id)){ state.movements.push(m); knownIds.add(m.id); } });
+      (data.parts||[]).forEach(p=>{ if(!knownParts.has(p.code)){ state.parts.push(p); knownParts.add(p.code); } });
+      saveState(); renderAll();
+      document.getElementById('syncHint').textContent = 'Pulled latest data from the sheet.';
+      toast('Pulled from Google Sheet.');
+    } else {
+      throw new Error(data.error || 'Unknown error');
+    }
+  }catch(err){
+    document.getElementById('syncHint').textContent = 'Pull failed: ' + err.message;
+    toast('Pull failed — see Sheet Sync panel.');
   }
+  btn.disabled=false; btn.textContent='Pull from Sheet';
+  renderSyncStatus();
+});
 
-  return { ok: true, movements: movements, parts: parts };
-}
-
-function pushData(parts, movements) {
-  var movSheet = getSheet('Movements', ['id','partCode','from','to','process','qty','date','remarks','ts']);
-  var partSheet = getSheet('Parts', ['code','desc','createdAt']);
-
-  var existingMovIds = {};
-  var movVals = movSheet.getDataRange().getValues();
-  for (var i = 1; i < movVals.length; i++) existingMovIds[String(movVals[i][0])] = true;
-
-  movements.forEach(function(m) {
-    if (existingMovIds[m.id]) return; // already stored, movements are append-only
-    movSheet.appendRow([m.id, m.partCode, m.from || '', m.to, m.process || '', m.qty, m.date, m.remarks || '', m.ts]);
-    existingMovIds[m.id] = true;
-  });
-
-  var existingParts = {};
-  var partVals = partSheet.getDataRange().getValues();
-  for (var j = 1; j < partVals.length; j++) existingParts[String(partVals[j][0])] = true;
-
-  parts.forEach(function(p) {
-    if (existingParts[p.code]) return;
-    partSheet.appendRow([p.code, p.desc || '', p.createdAt || Date.now()]);
-    existingParts[p.code] = true;
-  });
-}
-
-function formatDate(v) {
-  if (v instanceof Date) {
-    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
-  }
-  return String(v);
-}
+/* ---------------- init ---------------- */
+document.getElementById('moveDate').value = todayStr();
+document.getElementById('filterFrom').value = '';
+renderAll();
+</script>
+</body>
+</html>
