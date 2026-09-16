@@ -307,6 +307,10 @@ footer{
         <label class="label-cap">Move To Stage</label>
         <select id="toStage"></select>
       </div>
+      <div class="field" id="fromProcessField" style="display:none;">
+        <label class="label-cap">From Process (which one)</label>
+        <select id="fromProcessSelect"></select>
+      </div>
       <div class="field" id="processField" style="display:none;">
         <label class="label-cap">Process / Machine</label>
         <select id="processSelect"></select>
@@ -355,7 +359,7 @@ footer{
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Date</th><th>Part Code</th><th>From</th><th>To</th><th>Process</th><th>Qty</th><th>Remarks</th><th></th></tr>
+          <tr><th>Date</th><th>Part Code</th><th>From</th><th>From Process</th><th>To</th><th>To Process</th><th>Qty</th><th>Remarks</th><th></th></tr>
         </thead>
         <tbody id="ledgerBody"></tbody>
       </table>
@@ -404,7 +408,7 @@ footer{
     <p class="desc">Paste the Web App URL of the connected Google Apps Script (see README for setup). Data pushes and pulls on demand — nothing syncs automatically.</p>
     <div class="field">
       <label class="label-cap">Apps Script Web App URL</label>
-      <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/AKfycbyh96DqwaAVmAZQ9mAIJ2ptajWS3a8Ca52CUYY5ibDkkHnHidVcxklFBIGDLbVDJ1Un2g/exec">
+      <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
     </div>
     <div class="hint" id="syncHint">Not connected.</div>
     <div class="modal-close-row">
@@ -471,7 +475,7 @@ function computeBalances(code){
     if(m.from) bal[m.from] -= m.qty;
     bal[m.to] += m.qty;
     if(m.process && subBal[m.to]) subBal[m.to][m.process] = (subBal[m.to][m.process]||0) + m.qty;
-    if(m.from && m.process && subBal[m.from]) subBal[m.from][m.process] = (subBal[m.from][m.process]||0) - m.qty;
+    if(m.from && m.fromProcess && subBal[m.from]) subBal[m.from][m.fromProcess] = (subBal[m.from][m.fromProcess]||0) - m.qty;
   });
   return { bal, subBal };
 }
@@ -586,17 +590,29 @@ function onToStageChange(){
     procField.style.display='none';
   }
   const idx = STAGES.findIndex(s=>s.key===key);
-  const fromLabel = idx>0 ? STAGES[idx-1].label : null;
+  const fromStage = idx>0 ? STAGES[idx-1] : null;
+  const fromProcField = document.getElementById('fromProcessField');
+  const fromProcSel = document.getElementById('fromProcessSelect');
   const hint = document.getElementById('moveHint');
+
+  if(fromStage && fromStage.options){
+    fromProcField.style.display='';
+    const { subBal } = selectedPart ? computeBalances(selectedPart) : { subBal:{} };
+    const sb = subBal[fromStage.key] || {};
+    fromProcSel.innerHTML = fromStage.options.map(o=>`<option value="${o}">${o} (${sb[o]||0} available)</option>`).join('');
+  } else {
+    fromProcField.style.display='none';
+  }
+
   if(!selectedPart){
     hint.textContent = 'Select or add a part code first.'; hint.className='hint err'; return;
   }
-  if(!fromLabel){
+  if(!fromStage){
     hint.textContent = 'This adds fresh production quantity into PPC Plan.'; hint.className='hint';
   } else {
     const { bal } = computeBalances(selectedPart);
-    const avail = bal[STAGES[idx-1].key]||0;
-    hint.innerHTML = `Will deduct from <b>${fromLabel}</b> balance (currently <b>${avail}</b>) and add to <b>${s.label}</b>.`;
+    const avail = bal[fromStage.key]||0;
+    hint.innerHTML = `Will deduct from <b>${fromStage.label}</b> balance (currently <b>${avail}</b>) and add to <b>${s.label}</b>.`;
     hint.className='hint';
   }
 }
@@ -620,6 +636,7 @@ function renderLedger(){
       <td>${m.date}</td>
       <td>${m.partCode}</td>
       <td>${m.from ? `<span class="tag in">${stageLabel(m.from)}</span>` : `<span class="tag plan">New</span>`}</td>
+      <td>${m.fromProcess||'—'}</td>
       <td>${stageLabel(m.to)}</td>
       <td>${m.process||'—'}</td>
       <td>${m.qty}</td>
@@ -718,24 +735,34 @@ document.getElementById('btnAddMove').addEventListener('click', ()=>{
   if(!selectedPart){ hint.textContent='Select or add a part code first.'; hint.className='hint err'; return; }
   const toKey = document.getElementById('toStage').value;
   const idx = STAGES.findIndex(s=>s.key===toKey);
-  const fromKey = idx>0 ? STAGES[idx-1].key : null;
+  const fromStage = idx>0 ? STAGES[idx-1] : null;
+  const fromKey = fromStage ? fromStage.key : null;
   const qty = parseFloat(document.getElementById('moveQty').value);
   const date = document.getElementById('moveDate').value || todayStr();
   const remarks = document.getElementById('moveRemarks').value.trim();
   const s = STAGES[idx];
   const process = (s.options) ? document.getElementById('processSelect').value : null;
+  const fromProcess = (fromStage && fromStage.options) ? document.getElementById('fromProcessSelect').value : null;
 
   if(!qty || qty<=0){ hint.textContent='Enter a quantity greater than zero.'; hint.className='hint err'; return; }
   if(fromKey){
-    const { bal } = computeBalances(selectedPart);
+    const { bal, subBal } = computeBalances(selectedPart);
     const avail = bal[fromKey]||0;
     if(qty > avail){
       hint.innerHTML = `Only <b>${avail}</b> available at ${stageLabel(fromKey)}. Reduce the quantity or record production there first.`;
       hint.className='hint err';
       return;
     }
+    if(fromProcess){
+      const availSub = (subBal[fromKey] && subBal[fromKey][fromProcess]) || 0;
+      if(qty > availSub){
+        hint.innerHTML = `Only <b>${availSub}</b> available specifically in <b>${fromProcess}</b> at ${stageLabel(fromKey)}. Pick the correct source process or reduce the quantity.`;
+        hint.className='hint err';
+        return;
+      }
+    }
   }
-  const m = { id: uid(), partCode: selectedPart, from: fromKey, to: toKey, process, qty, date, remarks, ts: Date.now(), dirty:true };
+  const m = { id: uid(), partCode: selectedPart, from: fromKey, to: toKey, process, fromProcess, qty, date, remarks, ts: Date.now(), dirty:true };
   state.movements.push(m);
   lastMovementId = m.id;
   saveState();
@@ -787,9 +814,9 @@ document.getElementById('btnExport').addEventListener('click', ()=>{
   XLSX.utils.book_append_sheet(wb, ws1, 'Stock Summary');
 
   // Sheet 2: full movement ledger
-  const ledgerHead = ['Date','Part Code','From Stage','To Stage','Process','Qty','Remarks'];
+  const ledgerHead = ['Date','Part Code','From Stage','From Process','To Stage','To Process','Qty','Remarks'];
   const ledgerRows = state.movements.slice().sort((a,b)=>a.ts-b.ts)
-    .map(m=>[m.date, m.partCode, stageLabel(m.from), stageLabel(m.to), m.process||'', m.qty, m.remarks||'']);
+    .map(m=>[m.date, m.partCode, stageLabel(m.from), m.fromProcess||'', stageLabel(m.to), m.process||'', m.qty, m.remarks||'']);
   const ws2 = XLSX.utils.aoa_to_sheet([ledgerHead, ...ledgerRows]);
   XLSX.utils.book_append_sheet(wb, ws2, 'Movement Ledger');
 
