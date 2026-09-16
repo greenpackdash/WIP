@@ -1,0 +1,114 @@
+/**
+ * WIP Tracker — Google Sheets backend.
+ *
+ * SETUP
+ * 1. Go to https://sheets.new to create a fresh Google Sheet (or use an existing one).
+ * 2. In the sheet, open Extensions > Apps Script.
+ * 3. Delete any starter code and paste this whole file in.
+ * 4. Click Deploy > New deployment > select type "Web app".
+ *      - Execute as: Me
+ *      - Who has access: Anyone
+ * 5. Click Deploy, authorize the permissions it asks for, then copy the
+ *    "Web app URL" it gives you (ends in /exec).
+ * 6. Paste that URL into the app's "Sheet Sync" panel and click Push, then Pull.
+ *
+ * This script keeps two tabs in the spreadsheet:
+ *   - "Movements": one row per movement, the source of truth for WIP.
+ *   - "Parts":     one row per part code and its description.
+ * Both are created automatically the first time the app pushes data.
+ */
+
+function doGet(e) {
+  var action = e.parameter.action || 'pull';
+  if (action === 'pull') {
+    return respond(pullData());
+  }
+  return respond({ ok: false, error: 'Unknown GET action: ' + action });
+}
+
+function doPost(e) {
+  try {
+    var body = JSON.parse(e.postData.contents);
+    if (body.action === 'push') {
+      pushData(body.parts || [], body.movements || []);
+      return respond({ ok: true });
+    }
+    return respond({ ok: false, error: 'Unknown POST action: ' + body.action });
+  } catch (err) {
+    return respond({ ok: false, error: err.message });
+  }
+}
+
+function respond(obj) {
+  return ContentService.createTextOutput(JSON.stringify(obj))
+    .setMimeType(ContentService.MimeType.JSON);
+}
+
+function getSheet(name, headers) {
+  var ss = SpreadsheetApp.getActiveSpreadsheet();
+  var sh = ss.getSheetByName(name);
+  if (!sh) {
+    sh = ss.insertSheet(name);
+    sh.appendRow(headers);
+    sh.setFrozenRows(1);
+  }
+  return sh;
+}
+
+function pullData() {
+  var movSheet = getSheet('Movements', ['id','partCode','from','to','process','qty','date','remarks','ts']);
+  var partSheet = getSheet('Parts', ['code','desc','createdAt']);
+
+  var movRows = movSheet.getDataRange().getValues();
+  var movements = [];
+  for (var i = 1; i < movRows.length; i++) {
+    var r = movRows[i];
+    if (!r[0]) continue;
+    movements.push({
+      id: String(r[0]), partCode: String(r[1]), from: r[2] || null, to: r[3],
+      process: r[4] || null, qty: Number(r[5]), date: formatDate(r[6]), remarks: r[7] || '', ts: Number(r[8]) || Date.now()
+    });
+  }
+
+  var partRows = partSheet.getDataRange().getValues();
+  var parts = [];
+  for (var j = 1; j < partRows.length; j++) {
+    var pr = partRows[j];
+    if (!pr[0]) continue;
+    parts.push({ code: String(pr[0]), desc: pr[1] || '', createdAt: Number(pr[2]) || Date.now() });
+  }
+
+  return { ok: true, movements: movements, parts: parts };
+}
+
+function pushData(parts, movements) {
+  var movSheet = getSheet('Movements', ['id','partCode','from','to','process','qty','date','remarks','ts']);
+  var partSheet = getSheet('Parts', ['code','desc','createdAt']);
+
+  var existingMovIds = {};
+  var movVals = movSheet.getDataRange().getValues();
+  for (var i = 1; i < movVals.length; i++) existingMovIds[String(movVals[i][0])] = true;
+
+  movements.forEach(function(m) {
+    if (existingMovIds[m.id]) return; // already stored, movements are append-only
+    movSheet.appendRow([m.id, m.partCode, m.from || '', m.to, m.process || '', m.qty, m.date, m.remarks || '', m.ts]);
+    existingMovIds[m.id] = true;
+  });
+
+  var existingParts = {};
+  var partVals = partSheet.getDataRange().getValues();
+  for (var j = 1; j < partVals.length; j++) existingParts[String(partVals[j][0])] = true;
+
+  parts.forEach(function(p) {
+    if (existingParts[p.code]) return;
+    partSheet.appendRow([p.code, p.desc || '', p.createdAt || Date.now()]);
+    existingParts[p.code] = true;
+  });
+}
+
+function formatDate(v) {
+  if (v instanceof Date) {
+    return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+  }
+  return String(v);
+}
