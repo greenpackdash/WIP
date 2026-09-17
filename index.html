@@ -10,21 +10,21 @@
 <style>
 /* ---------------- Tokens ---------------- */
 :root{
-  --paper:#F6F1E6;
-  --paper-2:#EFE6D3;
-  --kraft:#B08463;
-  --kraft-dark:#8C6642;
-  --ink:#26241F;
-  --ink-soft:#5C564A;
-  --line:#D9CBAF;
-  --accent:#C1622B;
-  --ok:#4B7A51;
-  --ok-soft:#E3EDDF;
-  --warn:#B0791F;
-  --warn-soft:#F3E6C9;
-  --danger:#A6432F;
-  --card:#FFFDF8;
-  --shadow: 0 1px 0 rgba(38,36,31,.06);
+  --paper:#15171B;
+  --paper-2:#1F2228;
+  --kraft:#FF7A29;
+  --kraft-dark:#FF9152;
+  --ink:#F3EFE6;
+  --ink-soft:#9B968C;
+  --line:#33363D;
+  --accent:#FF7A29;
+  --ok:#6FCF7A;
+  --ok-soft:#1E3323;
+  --warn:#F2B84B;
+  --warn-soft:#3A2E13;
+  --danger:#FF6B5B;
+  --card:#1B1E24;
+  --shadow: 0 1px 0 rgba(0,0,0,.3);
   --radius: 3px;
   --font-head:'Oswald',system-ui,sans-serif;
   --font-body:'Inter',system-ui,-apple-system,sans-serif;
@@ -34,7 +34,7 @@ html,body{margin:0;padding:0;}
 body{
   background:var(--paper);
   background-image:
-    repeating-linear-gradient(135deg, rgba(176,132,99,.05) 0px, rgba(176,132,99,.05) 2px, transparent 2px, transparent 14px);
+    repeating-linear-gradient(135deg, rgba(255,255,255,.025) 0px, rgba(255,255,255,.025) 2px, transparent 2px, transparent 14px);
   color:var(--ink);
   font-family:var(--font-body);
   font-size:15px;
@@ -50,8 +50,8 @@ button, select, input{font-family:var(--font-body);}
 .wrap{max-width:1100px;margin:0 auto;padding:0 14px;}
 
 header.top{
-  background:var(--ink);
-  color:var(--paper);
+  background:var(--card);
+  color:var(--ink);
   border-bottom:4px solid var(--kraft);
 }
 header.top .wrap{
@@ -79,16 +79,16 @@ header.top .wrap{
 .btn:active{transform:scale(.97);}
 .btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
 .btn.primary:hover{background:#a94f22;}
-.btn.ghost{background:transparent;border-color:rgba(246,241,230,.35);color:var(--paper);}
-.btn.ghost:hover{background:rgba(246,241,230,.1);}
+.btn.ghost{background:transparent;border-color:var(--line);color:var(--ink);}
+.btn.ghost:hover{background:var(--paper-2);}
 .btn.small{padding:5px 10px;font-size:12px;}
 .btn[disabled]{opacity:.45;cursor:not-allowed;}
 
 /* ---------------- Sync status ---------------- */
 .sync-pill{
   display:flex;align-items:center;gap:6px;
-  font-size:12px;color:var(--paper);opacity:.85;
-  padding:6px 10px;border:1px solid rgba(246,241,230,.25);border-radius:20px;
+  font-size:12px;color:var(--ink);opacity:.85;
+  padding:6px 10px;border:1px solid var(--line);border-radius:20px;
 }
 .dot{width:7px;height:7px;border-radius:50%;background:var(--warn);}
 .dot.on{background:#7FBF7B;}
@@ -167,6 +167,9 @@ select:focus, input:focus, textarea:focus{border-color:var(--accent);}
   line-height:1;
 }
 .stage-card .stage-unit{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+.stage-card .stage-flow{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+.stage-card .stage-flow .moved{color:var(--kraft-dark);font-weight:600;}
+.stage-card.zero .stage-qty{color:var(--ink-soft);}
 .stage-card .stage-sub{
   margin-top:8px;font-size:11px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:6px;
 }
@@ -469,15 +472,16 @@ function partsMovements(code){
 }
 // Balance at each stage for a part code, based on ledger of movements.
 function computeBalances(code){
-  const bal = {}; STAGES.forEach(s=>bal[s.key]=0);
+  const bal = {}; const totalIn = {}; STAGES.forEach(s=>{bal[s.key]=0; totalIn[s.key]=0;});
   const subBal = {}; STAGES.forEach(s=>{ if(s.options){ subBal[s.key]={}; s.options.forEach(o=>subBal[s.key][o]=0); } });
   partsMovements(code).sort((a,b)=>a.ts-b.ts).forEach(m=>{
     if(m.from) bal[m.from] -= m.qty;
     bal[m.to] += m.qty;
+    totalIn[m.to] += m.qty;
     if(m.process && subBal[m.to]) subBal[m.to][m.process] = (subBal[m.to][m.process]||0) + m.qty;
     if(m.from && m.fromProcess && subBal[m.from]) subBal[m.from][m.fromProcess] = (subBal[m.from][m.fromProcess]||0) - m.qty;
   });
-  return { bal, subBal };
+  return { bal, subBal, totalIn };
 }
 function stageLabel(key){
   if(!key) return 'New Production';
@@ -555,20 +559,26 @@ function renderPipeline(){
   const el = document.getElementById('pipeline');
   el.innerHTML='';
   if(!selectedPart){ el.innerHTML = '<div class="hint">Add a part code to see its production pipeline.</div>'; return; }
-  const { bal, subBal } = computeBalances(selectedPart);
+  const { bal, subBal, totalIn } = computeBalances(selectedPart);
   STAGES.forEach((s,i)=>{
     if(i>0){
       const arrow = document.createElement('div'); arrow.className='arrow'; arrow.textContent='→';
       el.appendChild(arrow);
     }
     const qty = bal[s.key]||0;
+    const received = totalIn[s.key]||0;
+    const movedOn = received - qty;
     const card = document.createElement('div');
     card.className = 'stage-card' + (qty===0?' zero':'') + (s.key==='fg'?' final':'');
+    let flowHtml = '<div class="stage-unit">balance held here</div>';
+    if(movedOn > 0){
+      flowHtml = `<div class="stage-flow">${received} received · <span class="moved">${movedOn} moved on</span></div>`;
+    }
     let subHtml='';
     if(s.options){
       subHtml = '<div class="stage-sub">' + s.options.map(o=>`<div><span>${o}</span><span>${subBal[s.key][o]||0}</span></div>`).join('') + '</div>';
     }
-    card.innerHTML = `<p class="stage-name">${s.label}</p><div class="stage-qty">${qty}</div><div class="stage-unit">units in WIP</div>${subHtml}`;
+    card.innerHTML = `<p class="stage-name">${s.label}</p><div class="stage-qty">${qty}</div>${flowHtml}${subHtml}`;
     el.appendChild(card);
   });
 }
