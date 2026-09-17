@@ -441,7 +441,7 @@ footer{
     <p class="desc">Paste the Web App URL of the connected Google Apps Script (see README for setup). Data pushes and pulls on demand — nothing syncs automatically.</p>
     <div class="field">
       <label class="label-cap">Apps Script Web App URL</label>
-      <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/AKfycbyh96DqwaAVmAZQ9mAIJ2ptajWS3a8Ca52CUYY5ibDkkHnHidVcxklFBIGDLbVDJ1Un2g/exec">
+      <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec">
     </div>
     <div class="hint" id="syncHint">Not connected.</div>
     <div class="modal-close-row">
@@ -465,7 +465,6 @@ const STORAGE_KEY = 'wip_tracker_v1';
 // Fixed process pipeline for a corrugated box part code.
 // 'process' stages carry a sub-selection (machine / route) recorded on the movement.
 const STAGES = [
-  { key:'ppc',        label:'PPC Plan' },
   { key:'corrugation', label:'Corrugation' },
   { key:'printing',    label:'Printing', options:['GD','AD','Jumbo'] },
   { key:'finishing',   label:'Finishing', options:['Auto Stitching','Semi Auto Stitching','Insun (Gluing/Stitching)','Manual Gluing'] },
@@ -625,8 +624,7 @@ function renderPipeline(){
 }
 function renderToStageOptions(){
   const sel = document.getElementById('toStage');
-  sel.innerHTML = '<option value="ppc">PPC Plan (new production)</option>' +
-    STAGES.slice(1).map(s=>`<option value="${s.key}">${s.label}</option>`).join('');
+  sel.innerHTML = STAGES.map((s,i)=>`<option value="${s.key}">${s.label}${i===0?' (new production)':''}</option>`).join('');
   onToStageChange();
 }
 function onToStageChange(){
@@ -659,7 +657,7 @@ function onToStageChange(){
     hint.textContent = 'Select or add a part code first.'; hint.className='hint err'; return;
   }
   if(!fromStage){
-    hint.textContent = 'This adds fresh production quantity into PPC Plan.'; hint.className='hint';
+    hint.textContent = `This adds fresh production quantity into ${s.label}.`; hint.className='hint';
   } else {
     const { bal } = computeBalances(selectedPart);
     const avail = bal[fromStage.key]||0;
