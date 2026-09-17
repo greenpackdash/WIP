@@ -70,15 +70,15 @@ header.top .wrap{
   border:1px solid var(--line);
   background:var(--card);
   color:var(--ink);
-  padding:8px 14px;
-  border-radius:var(--radius);
+  padding:9px 16px;
+  border-radius:8px;
   font-size:13px;font-weight:600;cursor:pointer;
-  transition:transform .08s ease, background .15s ease;
+  transition:transform .12s ease, background .15s ease, box-shadow .15s ease, border-color .15s ease;
 }
-.btn:hover{background:var(--paper-2);}
-.btn:active{transform:scale(.97);}
-.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-.btn.primary:hover{background:#a94f22;}
+.btn:hover{background:var(--paper-2);transform:translateY(-1px);border-color:var(--kraft);}
+.btn:active{transform:scale(.97) translateY(0);}
+.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);box-shadow:0 4px 14px rgba(255,122,41,.28);}
+.btn.primary:hover{background:#e9691f;box-shadow:0 6px 18px rgba(255,122,41,.4);}
 .btn.ghost{background:transparent;border-color:var(--line);color:var(--ink);}
 .btn.ghost:hover{background:var(--paper-2);}
 .btn.small{padding:5px 10px;font-size:12px;}
@@ -109,11 +109,12 @@ select, input[type=text], input[type=number], input[type=date], textarea{
   border:1px solid var(--line);
   background:var(--card);
   padding:9px 10px;
-  border-radius:var(--radius);
+  border-radius:8px;
   font-size:14px;color:var(--ink);
   width:100%;
+  transition:border-color .15s ease, box-shadow .15s ease;
 }
-select:focus, input:focus, textarea:focus{border-color:var(--accent);}
+select:focus, input:focus, textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,122,41,.15);}
 .part-meta{font-size:12px;color:var(--ink-soft);padding:8px 0 2px;}
 .part-meta b{color:var(--ink);}
 
@@ -121,17 +122,20 @@ select:focus, input:focus, textarea:focus{border-color:var(--accent);}
 .combo{position:relative;}
 .combo input{cursor:text;}
 .combo-list{
-  position:absolute;top:calc(100% + 4px);left:0;right:0;
-  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  position:absolute;top:calc(100% + 6px);left:0;right:0;
+  background:var(--card);border:1px solid var(--line);border-radius:10px;
   max-height:260px;overflow-y:auto;z-index:30;
-  box-shadow:0 6px 18px rgba(38,36,31,.14);
+  box-shadow:0 12px 28px rgba(0,0,0,.4);
   display:none;
+  opacity:0;transform:translateY(-4px);
+  transition:opacity .12s ease, transform .12s ease;
 }
-.combo-list.open{display:block;}
+.combo-list.open{display:block;opacity:1;transform:translateY(0);}
 .combo-item{
-  padding:9px 12px;cursor:pointer;font-size:13.5px;
+  padding:10px 12px;cursor:pointer;font-size:13.5px;
   border-bottom:1px solid var(--paper-2);
   display:flex;justify-content:space-between;gap:10px;
+  transition:background .1s ease;
 }
 .combo-item:last-child{border-bottom:none;}
 .combo-item:hover, .combo-item.active{background:var(--paper-2);}
@@ -140,54 +144,80 @@ select:focus, input:focus, textarea:focus{border-color:var(--accent);}
 .combo-empty{padding:14px;font-size:13px;color:var(--ink-soft);}
 .combo-empty a{color:var(--accent);cursor:pointer;font-weight:600;}
 
-/* ---------------- Pipeline ---------------- */
+/* ---------------- Pipeline (dashboard tiles) ---------------- */
 .pipeline-scroll{
-  overflow-x:auto;padding:22px 0 14px;
-  -webkit-overflow-scrolling:touch;
+  padding:22px 0 14px;
 }
 .pipeline{
-  display:flex;align-items:stretch;gap:0;min-width:max-content;
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(160px, 1fr));
+  gap:14px;
 }
 .stage-card{
-  background:var(--card);
+  background:linear-gradient(160deg, var(--card), var(--paper-2));
   border:1px solid var(--line);
-  border-radius:var(--radius);
-  min-width:150px;
-  padding:14px 14px 12px;
+  border-radius:14px;
+  min-width:0;
+  padding:18px 18px 16px;
   position:relative;
+  overflow:hidden;
+  transition:transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+  opacity:0; transform:translateY(10px);
+  animation:tileIn .45s ease forwards;
 }
-.stage-card.zero{opacity:.55;}
+.stage-card::before{
+  content:'';position:absolute;top:0;left:0;right:0;height:3px;
+  background:var(--line);transition:background .2s ease;
+}
+.stage-card:hover{
+  transform:translateY(-3px);
+  border-color:var(--kraft);
+  box-shadow:0 10px 24px rgba(0,0,0,.35);
+}
+.stage-card:hover::before{background:var(--kraft);}
+.stage-card.zero{opacity:.5;}
+@keyframes tileIn{ to{ opacity:1; transform:translateY(0); } }
 .stage-card .stage-name{
   font-family:var(--font-head);font-size:13px;font-weight:600;
-  letter-spacing:.02em;color:var(--ink);margin:0 0 8px;
-  min-height:34px;
+  letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 10px;
+  min-height:auto;
 }
 .stage-card .stage-qty{
-  font-size:28px;font-weight:700;font-family:var(--font-head);color:var(--kraft-dark);
-  line-height:1;
+  font-size:36px;font-weight:700;font-family:var(--font-head);color:var(--kraft-dark);
+  line-height:1;letter-spacing:.01em;
 }
-.stage-card .stage-unit{font-size:11px;color:var(--ink-soft);margin-top:2px;}
-.stage-card .stage-flow{font-size:11px;color:var(--ink-soft);margin-top:2px;}
+.stage-card .stage-unit{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
+.stage-card .stage-flow{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
 .stage-card .stage-flow .moved{color:var(--kraft-dark);font-weight:600;}
 .stage-card.zero .stage-qty{color:var(--ink-soft);}
 .stage-card .stage-sub{
-  margin-top:8px;font-size:11px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:6px;
+  margin-top:10px;font-size:11.5px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px;
 }
-.stage-card .stage-sub div{display:flex;justify-content:space-between;padding:1px 0;}
-.arrow{
-  display:flex;align-items:center;justify-content:center;
-  width:26px;flex:0 0 26px;color:var(--kraft);font-size:16px;
-}
+.stage-card .stage-sub div{display:flex;justify-content:space-between;padding:2px 0;}
+.arrow{display:none;}
 .stage-card.final{border-color:var(--ok);}
+.stage-card.final::before{background:var(--ok);}
 .stage-card.final .stage-qty{color:var(--ok);}
+
+@media (max-width:640px){
+  .pipeline{grid-template-columns:repeat(2, 1fr);}
+}
 
 /* ---------------- Panels ---------------- */
 .panel{
   background:var(--card);
   border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:18px;margin-top:16px;
+  border-radius:14px;
+  padding:20px;margin-top:16px;
+  box-shadow:0 8px 20px rgba(0,0,0,.18);
+  opacity:0; transform:translateY(8px);
+  animation:panelIn .5s ease forwards;
+  animation-delay:.08s;
 }
+@keyframes panelIn{ to{ opacity:1; transform:translateY(0); } }
+.panel:nth-of-type(1){animation-delay:.05s;}
+.panel:nth-of-type(2){animation-delay:.12s;}
+.panel:nth-of-type(3){animation-delay:.19s;}
 .panel h2{
   font-size:15px;margin:0 0 14px;font-weight:600;letter-spacing:.02em;
   display:flex;align-items:center;gap:8px;
@@ -212,7 +242,7 @@ thead th{
   letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);
   border-bottom:2px solid var(--line);padding:8px 10px;white-space:nowrap;
 }
-tbody td{padding:8px 10px;border-bottom:1px solid var(--paper-2);white-space:nowrap;}
+tbody td{padding:9px 10px;border-bottom:1px solid var(--paper-2);white-space:nowrap;transition:background .1s ease;}
 tbody tr:hover{background:var(--paper-2);}
 .tag{
   display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;
@@ -415,6 +445,7 @@ footer{
     </div>
     <div class="hint" id="syncHint">Not connected.</div>
     <div class="modal-close-row">
+      <button class="btn" id="btnTestConn">Test Connection</button>
       <button class="btn" id="btnCloseSync">Close</button>
       <button class="btn" id="btnPull">Pull from Sheet</button>
       <button class="btn primary" id="btnPush">Push to Sheet</button>
@@ -466,6 +497,18 @@ function toast(msg){
   const t = document.getElementById('toast');
   t.textContent = msg; t.classList.add('show');
   clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2600);
+}
+function animateCount(el, target){
+  const duration = 500;
+  const start = performance.now();
+  function step(now){
+    const p = Math.min(1, (now - start) / duration);
+    const eased = 1 - Math.pow(1 - p, 3); // ease-out cubic
+    el.textContent = Math.round(target * eased);
+    if(p < 1) requestAnimationFrame(step);
+    else el.textContent = target;
+  }
+  requestAnimationFrame(step);
 }
 function partsMovements(code){
   return state.movements.filter(m=>m.partCode===code);
@@ -561,15 +604,12 @@ function renderPipeline(){
   if(!selectedPart){ el.innerHTML = '<div class="hint">Add a part code to see its production pipeline.</div>'; return; }
   const { bal, subBal, totalIn } = computeBalances(selectedPart);
   STAGES.forEach((s,i)=>{
-    if(i>0){
-      const arrow = document.createElement('div'); arrow.className='arrow'; arrow.textContent='→';
-      el.appendChild(arrow);
-    }
     const qty = bal[s.key]||0;
     const received = totalIn[s.key]||0;
     const movedOn = received - qty;
     const card = document.createElement('div');
     card.className = 'stage-card' + (qty===0?' zero':'') + (s.key==='fg'?' final':'');
+    card.style.animationDelay = (i*0.05) + 's';
     let flowHtml = '<div class="stage-unit">balance held here</div>';
     if(movedOn > 0){
       flowHtml = `<div class="stage-flow">${received} received · <span class="moved">${movedOn} moved on</span></div>`;
@@ -578,8 +618,9 @@ function renderPipeline(){
     if(s.options){
       subHtml = '<div class="stage-sub">' + s.options.map(o=>`<div><span>${o}</span><span>${subBal[s.key][o]||0}</span></div>`).join('') + '</div>';
     }
-    card.innerHTML = `<p class="stage-name">${s.label}</p><div class="stage-qty">${qty}</div>${flowHtml}${subHtml}`;
+    card.innerHTML = `<p class="stage-name">${s.label}</p><div class="stage-qty" data-target="${qty}">0</div>${flowHtml}${subHtml}`;
     el.appendChild(card);
+    animateCount(card.querySelector('.stage-qty'), qty);
   });
 }
 function renderToStageOptions(){
@@ -861,7 +902,7 @@ document.getElementById('btnPush').addEventListener('click', async ()=>{
     if(data.ok){
       state.movements.forEach(m=>delete m.dirty);
       saveState();
-      document.getElementById('syncHint').textContent = 'Pushed ' + (dirty.length) + ' new movement(s) successfully.';
+      document.getElementById('syncHint').textContent = `Pushed successfully — ${data.addedMovements||0} new movement(s), ${data.addedParts||0} new part code(s) added to the sheet.`;
       toast('Pushed to Google Sheet.');
     } else {
       throw new Error(data.error || 'Unknown error');
@@ -908,6 +949,23 @@ async function pullFromSheet(fromQuickButton){
   btn.disabled=false; btn.textContent=original;
   renderSyncStatus();
 }
+document.getElementById('btnTestConn').addEventListener('click', async ()=>{
+  const url = currentSheetUrl();
+  const hint = document.getElementById('syncHint');
+  if(!url){ hint.textContent = 'Paste a Web App URL first.'; return; }
+  hint.textContent = 'Testing…';
+  try{
+    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'action=ping');
+    const data = await res.json();
+    if(data.ok){
+      hint.textContent = '✓ Connected — script responded correctly. You can Pull or Push now.';
+    } else {
+      hint.textContent = 'Reached the URL, but it replied with an error: ' + (data.error || 'unknown');
+    }
+  }catch(err){
+    hint.textContent = 'Could not reach that URL: ' + err.message + '. Check it ends in /exec and the deployment access is set to "Anyone".';
+  }
+});
 document.getElementById('btnPull').addEventListener('click', ()=>pullFromSheet(false));
 
 /* ---------------- init ---------------- */
