@@ -5,109 +5,284 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>WIP Tracker — Box Plant</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;600;700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 :root{
-  --paper:#15171B; --paper-2:#1F2228; --kraft:#FF7A29; --kraft-dark:#FF9152;
-  --ink:#F3EFE6; --ink-soft:#9B968C; --line:#33363D; --accent:#FF7A29;
-  --ok:#6FCF7A; --ok-soft:#1E3323; --warn:#F2B84B; --warn-soft:#3A2E13;
-  --danger:#FF6B5B; --card:#1B1E24;
-  --font-head:'Oswald',system-ui,sans-serif; --font-body:'Inter',system-ui,-apple-system,sans-serif;
+  --bg:#0B0D12;
+  --bg-grad-1:#0B0D12;
+  --bg-grad-2:#11141C;
+  --surface:#151924;
+  --surface-2:#1B2030;
+  --surface-3:#212739;
+  --line:#2A3040;
+  --line-soft:#1E2330;
+  --ink:#EDEFF5;
+  --ink-soft:#8A90A6;
+  --ink-faint:#5B617A;
+  --amber:#F5A524;
+  --amber-soft:#3A2E12;
+  --amber-glow:rgba(245,165,36,.35);
+  --teal:#2DD4BF;
+  --teal-soft:#0F2E2A;
+  --violet:#8B7BF0;
+  --danger:#F2555A;
+  --danger-soft:#3A1518;
+  --ok:#3ECF7E;
+  --ok-soft:#123522;
+  --font-head:'Sora',system-ui,sans-serif;
+  --font-body:'Inter',system-ui,-apple-system,sans-serif;
+  --radius-lg:18px;
+  --radius-md:12px;
+  --radius-sm:8px;
+  --ease:cubic-bezier(.22,1,.36,1);
 }
 *{box-sizing:border-box;}
 html,body{margin:0;padding:0;}
-body{background:var(--paper);color:var(--ink);font-family:var(--font-body);font-size:15px;line-height:1.45;padding-bottom:40px;}
+body{
+  background:
+    radial-gradient(1200px 600px at 90% -10%, rgba(139,123,240,.10), transparent 60%),
+    radial-gradient(900px 500px at 5% 0%, rgba(245,165,36,.08), transparent 55%),
+    linear-gradient(180deg,var(--bg-grad-1),var(--bg-grad-2));
+  background-attachment:fixed;
+  color:var(--ink);
+  font-family:var(--font-body);
+  font-size:15px;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  padding-bottom:60px;
+  min-height:100vh;
+}
 h1,h2,h3,.label-cap{font-family:var(--font-head);}
-.wrap{max-width:1150px;margin:0 auto;padding:0 14px;}
-header.top{background:var(--card);border-bottom:4px solid var(--kraft);}
-header.top .wrap{display:flex;align-items:center;justify-content:space-between;padding:14px;gap:12px;flex-wrap:wrap;}
-.brand{display:flex;align-items:baseline;gap:10px;}
-.brand h1{font-size:20px;margin:0;font-weight:600;}
-.brand .plant-tag{font-size:11px;color:var(--kraft);font-weight:600;letter-spacing:.08em;}
-.top-actions{display:flex;gap:8px;flex-wrap:wrap;}
-.btn{border:1px solid var(--line);background:var(--card);color:var(--ink);padding:9px 16px;border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;}
-.btn:hover{background:var(--paper-2);border-color:var(--kraft);}
-.btn.primary{background:var(--accent);color:#fff;border-color:var(--accent);}
-.btn.primary:hover{background:#e9691f;}
+*{scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
+::-webkit-scrollbar{height:8px;width:8px;}
+::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;}
+:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:4px;}
+
+.wrap{max-width:1180px;margin:0 auto;padding:0 18px;}
+
+/* ---------- Header ---------- */
+header.top{
+  position:sticky;top:0;z-index:40;
+  background:rgba(11,13,18,.78);
+  backdrop-filter:blur(14px) saturate(140%);
+  border-bottom:1px solid var(--line-soft);
+}
+header.top .wrap{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;gap:14px;flex-wrap:wrap;}
+.brand{display:flex;align-items:center;gap:10px;}
+.brand .mark{
+  width:34px;height:34px;border-radius:10px;
+  background:linear-gradient(135deg,var(--amber),#ffcf6b);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-head);font-weight:800;color:#1a1305;font-size:15px;
+  box-shadow:0 4px 16px var(--amber-glow);
+}
+.brand h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em;}
+.brand .plant-tag{font-size:10.5px;color:var(--ink-faint);font-weight:600;letter-spacing:.1em;display:block;margin-top:1px;}
+.top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
+.btn{
+  border:1px solid var(--line);background:var(--surface);color:var(--ink);
+  padding:9px 15px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;
+  transition:transform .15s var(--ease), background .15s, border-color .15s, box-shadow .2s;
+  display:inline-flex;align-items:center;gap:6px;
+}
+.btn:hover{background:var(--surface-2);border-color:var(--ink-faint);transform:translateY(-1px);}
+.btn:active{transform:translateY(0) scale(.97);}
+.btn.primary{background:linear-gradient(135deg,var(--amber),#e8930f);color:#1a1305;border-color:transparent;box-shadow:0 6px 18px var(--amber-glow);}
+.btn.primary:hover{box-shadow:0 8px 22px var(--amber-glow);filter:brightness(1.05);}
 .btn.ghost{background:transparent;}
-.btn.small{padding:5px 10px;font-size:12px;}
-.btn.danger{color:var(--danger);border-color:var(--danger);}
-.sync-pill{display:flex;align-items:center;gap:6px;font-size:12px;padding:6px 10px;border:1px solid var(--line);border-radius:20px;}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--warn);}
-.dot.on{background:#7FBF7B;} .dot.off{background:var(--danger);}
-.selector-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:22px 0 6px;}
-.field{display:flex;flex-direction:column;gap:4px;min-width:180px;}
+.btn.small{padding:6px 11px;font-size:12px;}
+.btn.wide{width:100%;justify-content:center;padding:13px;font-size:14px;}
+.btn[disabled]{opacity:.4;cursor:not-allowed;transform:none;}
+.sync-pill{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);padding:7px 12px;border:1px solid var(--line);border-radius:20px;background:var(--surface);}
+.dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);box-shadow:0 0 0 3px transparent;transition:.3s;}
+.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(62,207,126,.18);animation:pulse 2.4s ease-in-out infinite;}
+.dot.off{background:var(--danger);}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(62,207,126,.18);}50%{box-shadow:0 0 0 6px rgba(62,207,126,.05);}}
+
+/* ---------- Part selector ---------- */
+.selector-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:26px 0 8px;}
+.field{display:flex;flex-direction:column;gap:6px;min-width:180px;}
 .field.grow{flex:1;}
-.label-cap{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-soft);font-weight:600;}
-select,input[type=text],input[type=number],input[type=date],textarea{border:1px solid var(--line);background:var(--card);padding:9px 10px;border-radius:8px;font-size:14px;color:var(--ink);width:100%;}
-select:focus,input:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(255,122,41,.15);}
-.part-meta{font-size:12px;color:var(--ink-soft);padding:8px 0 2px;}
+.label-cap{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;}
+select,input[type=text],input[type=number],input[type=date],textarea{
+  border:1px solid var(--line);background:var(--surface);padding:11px 13px;border-radius:10px;
+  font-size:14px;color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s,background .15s;
+}
+select:focus,input:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(245,165,36,.12);background:var(--surface-2);}
+input::placeholder{color:var(--ink-faint);}
+.part-meta{font-size:12.5px;color:var(--ink-soft);padding:10px 0 2px;}
 .part-meta b{color:var(--ink);}
 .combo{position:relative;}
-.combo-list{position:absolute;top:calc(100% + 6px);left:0;right:0;background:var(--card);border:1px solid var(--line);border-radius:10px;max-height:280px;overflow-y:auto;z-index:30;box-shadow:0 12px 28px rgba(0,0,0,.4);display:none;}
-.combo-list.open{display:block;}
-.combo-item{padding:10px 12px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--paper-2);display:flex;justify-content:space-between;gap:10px;}
-.combo-item:hover,.combo-item.active{background:var(--paper-2);}
-.combo-item .code{font-weight:600;}
+.combo-list{
+  position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--surface-2);
+  border:1px solid var(--line);border-radius:14px;max-height:300px;overflow-y:auto;z-index:30;
+  box-shadow:0 20px 44px rgba(0,0,0,.5);opacity:0;transform:translateY(-6px) scale(.99);
+  pointer-events:none;transition:opacity .16s var(--ease), transform .16s var(--ease);
+}
+.combo-list.open{opacity:1;transform:translateY(0) scale(1);pointer-events:auto;}
+.combo-item{padding:12px 14px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:10px;transition:background .1s;}
+.combo-item:last-child{border-bottom:none;}
+.combo-item:hover,.combo-item.active{background:var(--surface-3);}
+.combo-item .code{font-weight:700;}
 .combo-item .desc{color:var(--ink-soft);font-size:12px;text-align:right;}
-.combo-item .batchtag{font-size:10px;color:var(--kraft);font-weight:700;text-transform:uppercase;}
-.combo-empty{padding:14px;font-size:13px;color:var(--ink-soft);}
-.combo-empty a{color:var(--accent);cursor:pointer;font-weight:600;}
-.pipeline-scroll{padding:22px 0 14px;}
-.pipeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:14px;}
-.stage-card{background:linear-gradient(160deg,var(--card),var(--paper-2));border:1px solid var(--line);border-radius:14px;padding:18px;position:relative;}
-.stage-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--line);}
-.stage-card.zero{opacity:.5;}
-.stage-card .stage-name{font-size:13px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 10px;cursor:pointer;}
-.stage-card .stage-name:hover{color:var(--kraft-dark);text-decoration:underline;}
-.stage-card .stage-sub div{cursor:pointer;border-radius:5px;padding:2px 4px;margin:0 -4px;}
-.stage-card .stage-sub div:hover{background:var(--paper-2);color:var(--kraft-dark);}
-.breakdown-clear{background:none;border:none;color:var(--accent);cursor:pointer;font-size:12px;font-weight:600;padding:0;}
-.breakdown-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:12px;}
-.stage-card .stage-qty{font-size:36px;font-weight:700;color:var(--kraft-dark);line-height:1;}
-.stage-card .stage-unit{font-size:11.5px;color:var(--ink-soft);margin-top:4px;}
-.stage-card.dispatch{border-color:var(--ok);}
-.stage-card.dispatch::before{background:var(--ok);}
-.stage-card.dispatch .stage-qty{color:var(--ok);}
-.stage-card .stage-sub{margin-top:10px;font-size:11.5px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:8px;}
-.stage-card .stage-sub div{display:flex;justify-content:space-between;padding:2px 0;}
-@media (max-width:640px){.pipeline{grid-template-columns:repeat(2,1fr);}}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px;margin-top:16px;}
-.panel h2{font-size:15px;margin:0 0 14px;font-weight:600;display:flex;align-items:center;gap:8px;}
-.panel h2 .idx{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;border-radius:50%;background:var(--kraft);color:#fff;font-size:11px;font-family:var(--font-body);}
-.grid-form{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;align-items:end;}
-.grid-form .span2{grid-column:span 2;}
-.form-actions{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
-.hint{font-size:12px;color:var(--ink-soft);margin-top:6px;}
+.combo-item .batchtag{font-size:9.5px;color:var(--amber);font-weight:700;text-transform:uppercase;background:var(--amber-soft);padding:2px 7px;border-radius:20px;margin-left:8px;}
+.combo-empty{padding:16px;font-size:13px;color:var(--ink-soft);}
+.combo-empty a{color:var(--amber);cursor:pointer;font-weight:700;}
+.hint{font-size:12.5px;color:var(--ink-soft);margin-top:6px;line-height:1.5;}
 .hint.err{color:var(--danger);font-weight:600;}
 .hint.ok{color:var(--ok);font-weight:600;}
-.table-wrap{overflow-x:auto;margin-top:4px;max-height:520px;overflow-y:auto;border-radius:8px;}
+
+.batch-list{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;}
+.batch-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);padding:5px 12px;border-radius:20px;cursor:pointer;transition:.15s;}
+.batch-pill:hover{border-color:var(--ink-faint);}
+.batch-pill.active{border-color:var(--amber);color:var(--amber);background:var(--amber-soft);}
+
+/* ---------- Pipeline ---------- */
+.pipeline-scroll{padding:26px 0 6px;}
+.pipeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:14px;}
+.stage-card{
+  background:linear-gradient(160deg,var(--surface),var(--surface-2));
+  border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:18px;position:relative;overflow:hidden;cursor:pointer;
+  transition:transform .22s var(--ease),border-color .22s,box-shadow .22s;
+  opacity:0;transform:translateY(14px) scale(.98);animation:tileIn .5s var(--ease) forwards;
+}
+.stage-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--line);transition:background .2s;}
+.stage-card::after{content:'';position:absolute;inset:0;background:radial-gradient(120px 80px at 20% 0%, rgba(245,165,36,0),transparent);opacity:0;transition:opacity .3s;}
+.stage-card:hover{transform:translateY(-4px);border-color:var(--amber);box-shadow:0 14px 32px rgba(0,0,0,.4);}
+.stage-card:hover::before{background:var(--amber);}
+.stage-card:hover::after{opacity:1;background:radial-gradient(160px 100px at 20% 0%, var(--amber-glow),transparent 70%);}
+.stage-card.selected{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-glow), 0 14px 32px rgba(0,0,0,.4);transform:translateY(-4px);}
+.stage-card.selected::before{background:var(--amber);}
+.stage-card.zero{opacity:.45;}
+.stage-card.zero:hover{opacity:.75;}
+@keyframes tileIn{to{opacity:1;transform:translateY(0) scale(1);}}
+.stage-card .stage-name{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;}
+.stage-card .stage-name .tap-hint{font-size:9.5px;color:var(--ink-faint);font-weight:600;opacity:0;transition:opacity .2s;text-transform:none;letter-spacing:0;}
+.stage-card:hover .tap-hint{opacity:1;}
+.stage-card .stage-qty{font-size:34px;font-weight:800;color:var(--ink);line-height:1;font-family:var(--font-head);letter-spacing:-.02em;}
+.stage-card .stage-unit{font-size:11px;color:var(--ink-faint);margin-top:5px;}
+.stage-card.dispatch{border-color:rgba(62,207,126,.35);}
+.stage-card.dispatch::before{background:var(--ok);}
+.stage-card.dispatch:hover::before{background:var(--ok);}
+.stage-card.dispatch .stage-qty{color:var(--ok);}
+.stage-card .stage-sub{margin-top:12px;font-size:11.5px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:9px;}
+.stage-card .stage-sub div{display:flex;justify-content:space-between;padding:3px 4px;border-radius:6px;margin:0 -4px;transition:background .12s;}
+.stage-card .stage-sub div:hover{background:var(--surface-3);color:var(--amber);}
+@media (max-width:640px){.pipeline{grid-template-columns:repeat(2,1fr);}}
+
+/* ---------- Quick entry bar ---------- */
+.entry-card{
+  background:linear-gradient(160deg,var(--surface),var(--surface-2));
+  border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:22px;margin-top:20px;
+  box-shadow:0 16px 40px rgba(0,0,0,.28);
+  opacity:0;transform:translateY(10px);animation:panelIn .5s var(--ease) forwards;
+}
+.entry-card h2{font-size:16px;margin:0 0 4px;font-weight:700;display:flex;align-items:center;gap:9px;}
+.entry-card .sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 18px;}
+.flow-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
+.flow-chip{
+  display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;
+  background:var(--surface-3);border:1px solid var(--line);font-weight:700;font-size:14px;
+  min-width:140px;cursor:pointer;transition:.18s var(--ease);
+}
+.flow-chip:hover{border-color:var(--amber);}
+.flow-chip.from{color:var(--ink);}
+.flow-chip.to{color:var(--amber);border-color:rgba(245,165,36,.4);background:var(--amber-soft);}
+.flow-arrow{color:var(--ink-faint);font-size:20px;flex:0 0 auto;}
+.chip-quick-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
+.chip-quick{
+  padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;
+  background:var(--surface);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer;
+  transition:.15s;
+}
+.chip-quick:hover{border-color:var(--amber);color:var(--amber);}
+.chip-quick.active{background:var(--amber-soft);border-color:var(--amber);color:var(--amber);}
+.entry-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:16px;}
+.entry-grid .field.qty input{font-size:22px;font-weight:800;font-family:var(--font-head);text-align:center;padding:12px;}
+.entry-remarks{margin-top:12px;}
+@media (max-width:680px){.entry-grid{grid-template-columns:1fr;}}
+
+/* ---------- Panels ---------- */
+.panel{
+  background:linear-gradient(160deg,var(--surface),var(--surface-2));
+  border:1px solid var(--line);border-radius:var(--radius-lg);
+  padding:22px;margin-top:18px;box-shadow:0 12px 30px rgba(0,0,0,.22);
+  opacity:0;transform:translateY(10px);animation:panelIn .5s var(--ease) forwards;
+}
+@keyframes panelIn{to{opacity:1;transform:translateY(0);}}
+.panel:nth-of-type(2){animation-delay:.05s;}
+.panel:nth-of-type(3){animation-delay:.1s;}
+.panel h2{font-size:15.5px;margin:0 0 16px;font-weight:700;letter-spacing:-.005em;display:flex;align-items:center;gap:9px;}
+.panel h2 .idx{
+  display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;
+  background:linear-gradient(135deg,var(--amber),#e8930f);color:#1a1305;font-size:11px;font-weight:800;font-family:var(--font-body);
+}
+.breakdown-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
+.breakdown-clear{background:none;border:none;color:var(--amber);cursor:pointer;font-size:12.5px;font-weight:700;padding:0;}
+
+.form-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+
+/* ---------- Table ---------- */
+.table-wrap{overflow-x:auto;margin-top:4px;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid var(--line-soft);}
 table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px;}
-thead th{text-align:left;font-weight:600;font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-soft);border-bottom:2px solid var(--line);padding:8px 10px;white-space:nowrap;position:sticky;top:0;background:var(--card);z-index:5;box-shadow:0 1px 0 var(--line);}
-tbody td{padding:9px 10px;border-bottom:1px solid var(--paper-2);white-space:nowrap;}
-tbody tr:hover{background:var(--paper-2);}
-.tag{display:inline-block;padding:2px 8px;border-radius:20px;font-size:11px;font-weight:600;}
-.tag.in{background:var(--ok-soft);color:var(--ok);}
-.tag.plan{background:var(--warn-soft);color:var(--warn);}
-.row-del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;font-weight:600;}
-.empty-row td{color:var(--ink-soft);text-align:center;padding:22px;}
-.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:12px;}
-.filters .field{min-width:140px;}
-.modal-backdrop{position:fixed;inset:0;background:rgba(0,0,0,.5);display:none;align-items:center;justify-content:center;z-index:50;padding:16px;}
-.modal-backdrop.open{display:flex;}
-.modal{background:var(--card);border-radius:12px;max-width:480px;width:100%;padding:22px;max-height:90vh;overflow:auto;border:1px solid var(--line);}
-.modal h3{margin:0 0 4px;font-size:17px;}
-.modal p.desc{font-size:13px;color:var(--ink-soft);margin:0 0 16px;}
-.modal .field{margin-bottom:12px;}
-.modal-close-row{display:flex;justify-content:flex-end;gap:10px;margin-top:16px;flex-wrap:wrap;}
-.toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:20px;font-size:13px;z-index:60;display:none;}
-.toast.show{display:block;}
-footer{text-align:center;font-size:11px;color:var(--ink-soft);padding:26px 14px 4px;}
-.batch-pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;color:var(--ink-soft);background:var(--paper-2);border:1px solid var(--line);padding:3px 9px;border-radius:14px;margin-right:6px;margin-bottom:6px;cursor:pointer;}
-.batch-pill.active{border-color:var(--kraft);color:var(--kraft-dark);background:rgba(255,122,41,.1);}
-.batch-list{display:flex;flex-wrap:wrap;margin:8px 0 4px;}
-@media (max-width:640px){.brand h1{font-size:17px;}.selector-row{flex-direction:column;align-items:stretch;}.field{min-width:0;}.panel{padding:14px;}}
+thead th{
+  text-align:left;font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);
+  border-bottom:1px solid var(--line);padding:11px 12px;white-space:nowrap;position:sticky;top:0;
+  background:var(--surface-2);z-index:5;
+}
+tbody td{padding:11px 12px;border-bottom:1px solid var(--line-soft);white-space:nowrap;transition:background .12s;}
+tbody tr:hover{background:var(--surface-3);}
+.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
+.tag.in{background:var(--teal-soft);color:var(--teal);}
+.tag.plan{background:var(--amber-soft);color:var(--amber);}
+.row-del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;font-weight:700;opacity:.7;transition:.15s;}
+.row-del:hover{opacity:1;}
+.empty-row td{color:var(--ink-faint);text-align:center;padding:28px;}
+.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.filters .field{min-width:150px;}
+
+/* ---------- Modal ---------- */
+.modal-backdrop{
+  position:fixed;inset:0;background:rgba(6,7,10,.6);backdrop-filter:blur(4px);display:none;
+  align-items:center;justify-content:center;z-index:50;padding:16px;
+}
+.modal-backdrop.open{display:flex;animation:fadeIn .18s var(--ease);}
+@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+.modal{
+  background:var(--surface-2);border-radius:18px;max-width:480px;width:100%;padding:26px;
+  max-height:90vh;overflow:auto;border:1px solid var(--line);
+  box-shadow:0 30px 70px rgba(0,0,0,.5);
+  animation:modalIn .22s var(--ease);
+}
+@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
+.modal h3{margin:0 0 4px;font-size:18px;font-weight:700;}
+.modal p.desc{font-size:13px;color:var(--ink-soft);margin:0 0 18px;line-height:1.5;}
+.modal .field{margin-bottom:13px;}
+.modal-close-row{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap;}
+
+.toast{
+  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
+  background:var(--surface-3);color:var(--ink);padding:12px 22px;border-radius:14px;
+  font-size:13.5px;font-weight:600;z-index:60;opacity:0;pointer-events:none;
+  box-shadow:0 12px 34px rgba(0,0,0,.5);border:1px solid var(--line);
+  transition:opacity .25s var(--ease), transform .25s var(--ease);
+  display:flex;align-items:center;gap:8px;
+}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+.toast .icon{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:0 0 auto;}
+.toast.err .icon{background:var(--danger);}
+
+footer{text-align:center;font-size:11.5px;color:var(--ink-faint);padding:30px 14px 4px;}
+
+@media (max-width:640px){
+  .brand h1{font-size:17px;}
+  .selector-row{flex-direction:column;align-items:stretch;}
+  .field{min-width:0;}
+  .panel,.entry-card{padding:16px;}
+}
 </style>
 </head>
 <body>
@@ -115,8 +290,11 @@ footer{text-align:center;font-size:11px;color:var(--ink-soft);padding:26px 14px 
 <header class="top">
   <div class="wrap">
     <div class="brand">
-      <h1>WIP Tracker</h1>
-      <span class="plant-tag">CORRUGATED BOX PLANT</span>
+      <div class="mark">WT</div>
+      <div>
+        <h1>WIP Tracker</h1>
+        <span class="plant-tag">CORRUGATED BOX PLANT</span>
+      </div>
     </div>
     <div class="top-actions">
       <span class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncLabel">Local only</span></span>
@@ -136,87 +314,88 @@ footer{text-align:center;font-size:11px;color:var(--ink-soft);padding:26px 14px 
     </div>
     <div class="field">
       <label class="label-cap">&nbsp;</label>
-      <button class="btn small" id="btnPullParts">↻ Refresh from Sheet</button>
+      <button class="btn small" id="btnPullParts">↻ Refresh</button>
     </div>
     <div class="field">
       <label class="label-cap">&nbsp;</label>
-      <button class="btn" id="btnNewPart">+ New Batch / Plan</button>
+      <button class="btn primary" id="btnNewPart">+ New Batch</button>
     </div>
   </div>
   <div class="part-meta" id="partMeta"></div>
-  <div class="hint" id="partSourceHint">Each entry of a part code creates a new <b>batch</b> for that day's plan. If the same part code comes in again on a different day, it starts a fresh batch — yesterday's batch keeps moving forward on its own and does not merge with today's.</div>
-
   <div class="batch-list" id="batchList"></div>
 
   <div class="pipeline-scroll">
     <div class="pipeline" id="pipeline"></div>
   </div>
 
+  <!-- Quick entry: tap-based -->
+  <div class="entry-card">
+    <h2>⚡ Record Movement</h2>
+    <p class="sub">Tap a stage below as your source, tap where it's going, type the quantity, hit Enter.</p>
+
+    <div class="flow-row">
+      <div class="flow-chip from" id="fromChip">New Production</div>
+      <span class="flow-arrow">→</span>
+      <div class="flow-chip to" id="toChip">Choose destination…</div>
+    </div>
+    <div class="chip-quick-row" id="toQuickRow"></div>
+    <input type="hidden" id="fromStage">
+    <input type="hidden" id="toStageInput">
+
+    <div class="entry-grid">
+      <div class="field">
+        <label class="label-cap">Sub-process (optional)</label>
+        <input type="text" id="processInput" placeholder="e.g. GD, Auto Stitching">
+      </div>
+      <div class="field">
+        <label class="label-cap">Date</label>
+        <input type="date" id="moveDate">
+      </div>
+      <div class="field qty" style="min-width:140px;">
+        <label class="label-cap" style="text-align:center;">Quantity</label>
+        <input type="number" id="moveQty" min="1" placeholder="0" autocomplete="off">
+      </div>
+    </div>
+    <div class="field entry-remarks">
+      <label class="label-cap">Remarks (optional)</label>
+      <input type="text" id="moveRemarks" placeholder="e.g. shortage, urgent order">
+    </div>
+
+    <div class="hint" id="moveHint">Pick a destination stage to record fresh production, or tap an existing stage above first to move stock forward from there.</div>
+    <div class="form-actions">
+      <button class="btn primary wide" id="btnAddMove" style="flex:1;">Record Movement</button>
+      <button class="btn" id="btnUndo">Undo Last</button>
+    </div>
+  </div>
+
   <div class="panel" id="breakdownPanel" style="display:none;">
     <div class="breakdown-title">
-      <h2 style="margin:0;"><span class="idx">•</span> <span id="breakdownHeading">Process Breakdown</span></h2>
+      <h2 style="margin:0;"><span class="idx">i</span> <span id="breakdownHeading">Process Breakdown</span></h2>
       <button class="breakdown-clear" id="btnClearBreakdown">✕ Clear filter</button>
     </div>
-    <div class="hint" id="breakdownHint" style="margin-bottom:10px;">Click any stage name or sub-process (e.g. Auto Stitching, Insun, GD, Printing) in the pipeline above to see every part code and its quantity sitting there right now — across all batches, plant-wide.</div>
+    <div class="hint" id="breakdownHint" style="margin-bottom:10px;">Click any stage name or sub-process in the pipeline above to see every part code and quantity sitting there right now, across all batches.</div>
     <div class="table-wrap">
       <table>
         <thead><tr><th>Part Code</th><th>Batch Date</th><th>Description</th><th>Qty</th></tr></thead>
         <tbody id="breakdownBody"></tbody>
       </table>
     </div>
-    <div class="hint" id="breakdownTotal" style="margin-top:8px;font-weight:600;"></div>
-  </div>
-
-  <div class="panel">
-    <h2><span class="idx">1</span> Record Movement</h2>
-    <div class="hint" id="stageNote" style="margin-bottom:10px;">Stages are free-form — move from any stage to any stage (e.g. Corrugation straight to Dispatch, or Printing straight to Dispatch, skipping Packaging). Type a new stage name if it isn't in the list yet.</div>
-    <div class="grid-form" id="moveForm">
-      <div class="field">
-        <label class="label-cap">From Stage</label>
-        <select id="fromStage"></select>
-      </div>
-      <div class="field">
-        <label class="label-cap">To Stage</label>
-        <input type="text" id="toStageInput" list="stageOptions" placeholder="e.g. Printing, Dispatch...">
-        <datalist id="stageOptions"></datalist>
-      </div>
-      <div class="field">
-        <label class="label-cap">Sub-process (optional)</label>
-        <input type="text" id="processInput" placeholder="e.g. GD, Auto Stitching">
-      </div>
-      <div class="field">
-        <label class="label-cap">Quantity</label>
-        <input type="number" id="moveQty" min="1" placeholder="e.g. 500">
-      </div>
-      <div class="field">
-        <label class="label-cap">Date</label>
-        <input type="date" id="moveDate">
-      </div>
-      <div class="field span2">
-        <label class="label-cap">Remarks (optional)</label>
-        <input type="text" id="moveRemarks" placeholder="e.g. shortage, urgent order">
-      </div>
-    </div>
-    <div class="hint" id="moveHint">Pick "— New Production —" as From Stage for fresh input into this batch, or pick an existing stage to move stock forward from there.</div>
-    <div class="form-actions">
-      <button class="btn primary" id="btnAddMove">Record Movement</button>
-      <button class="btn" id="btnUndo">Undo Last</button>
-    </div>
+    <div class="hint" id="breakdownTotal" style="margin-top:10px;font-weight:700;color:var(--ink);"></div>
   </div>
 
   <div class="panel">
     <h2><span class="idx">2</span> Movement Ledger</h2>
     <div class="filters">
       <div class="field">
-        <label class="label-cap">Filter Part Code</label>
+        <label class="label-cap">Part Code</label>
         <select id="filterPart"></select>
       </div>
       <div class="field">
-        <label class="label-cap">Filter Batch</label>
+        <label class="label-cap">Batch</label>
         <select id="filterBatch"></select>
       </div>
       <div class="field">
-        <label class="label-cap">Filter Stage</label>
+        <label class="label-cap">Stage</label>
         <select id="filterStage"></select>
       </div>
       <div class="field">
@@ -291,15 +470,14 @@ footer{text-align:center;font-size:11px;color:var(--ink-soft);padding:26px 14px 
   </div>
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast"><span class="icon"></span><span id="toastMsg"></span></div>
 
 <script>
 /* =====================================================================
-   WIP TRACKER v2 — batch-based, free-form stages, dispatch as log
+   WIP TRACKER v3 — streamlined tap-to-record entry, polished UI
    ===================================================================== */
-const STORAGE_KEY = 'wip_tracker_v2';
+const STORAGE_KEY = 'wip_tracker_v2'; // same schema as v2, just a new UI
 
-// Common stage suggestions only — NOT a fixed pipeline. Users can type any stage name.
 const STAGE_SUGGESTIONS = ['Corrugation','Printing','Finishing','Packaging','Dispatch'];
 const DISPATCH_WORDS = ['dispatch','dispatched','despatch','fg','finished good','finished goods'];
 
@@ -307,11 +485,10 @@ function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
     if(raw) return JSON.parse(raw);
-    // migrate from v1 if present
     const old = localStorage.getItem('wip_tracker_v1');
     if(old){
       const o = JSON.parse(old);
-      const batches = (o.parts||[]).map(p=>({ id: 'b_'+p.code+'_legacy', code:p.code, desc:p.desc||'', date:(new Date(p.createdAt||Date.now())).toISOString().slice(0,10), createdAt:p.createdAt||Date.now() }));
+      const batches = (o.parts||[]).map(p=>({ id:'b_'+p.code+'_legacy', code:p.code, desc:p.desc||'', date:(new Date(p.createdAt||Date.now())).toISOString().slice(0,10), createdAt:p.createdAt||Date.now() }));
       const movements = (o.movements||[]).map(m=>({
         id:m.id, batchId:'b_'+m.partCode+'_legacy', partCode:m.partCode,
         from: m.from ? (m.from==='fg'?'Dispatch':m.from) : null,
@@ -325,39 +502,34 @@ function loadState(){
   return { batches: [], movements: [], sheetUrl: '' };
 }
 function saveState(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ toast('Could not save locally.'); }
+  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ toast('Could not save locally.', true); }
 }
 
 let state = loadState();
 let selectedBatchId = state.batches[0] ? state.batches[0].id : null;
 let lastMovementId = null;
+let pendingFrom = null;   // stage name or null (= new production)
+let pendingTo = null;     // stage name string or null
 
 function uid(p){ return (p||'m') + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
-function isDispatchStage(name){
-  if(!name) return false;
-  return DISPATCH_WORDS.includes(String(name).trim().toLowerCase());
-}
-function toast(msg){
+function isDispatchStage(name){ if(!name) return false; return DISPATCH_WORDS.includes(String(name).trim().toLowerCase()); }
+function toast(msg, isErr){
   const t = document.getElementById('toast');
-  t.textContent = msg; t.classList.add('show');
-  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2600);
+  document.getElementById('toastMsg').textContent = msg;
+  t.classList.toggle('err', !!isErr);
+  t.classList.add('show');
+  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2800);
 }
 
 function batchMovements(id){ return state.movements.filter(m=>m.batchId===id); }
 function batchesForCode(code){ return state.batches.filter(b=>b.code===code).sort((a,b)=>b.date.localeCompare(a.date)); }
 
-// Balances for one batch: stage -> qty currently sitting there. Dispatch-like stages
-// are treated as a one-way log (never depleted, never asked "available at Dispatch").
 function computeBatchBalances(batchId){
   const bal = {}; const subBal = {}; const received = {};
   batchMovements(batchId).sort((a,b)=>a.ts-b.ts).forEach(m=>{
     if(m.from && !isDispatchStage(m.from)) bal[m.from] = (bal[m.from]||0) - m.qty;
-    if(!isDispatchStage(m.to)){
-      bal[m.to] = (bal[m.to]||0) + m.qty;
-    } else {
-      bal[m.to] = (bal[m.to]||0) + m.qty; // dispatched total, never subtracted from
-    }
+    bal[m.to] = (bal[m.to]||0) + m.qty;
     received[m.to] = (received[m.to]||0) + m.qty;
     if(m.process){
       subBal[m.to] = subBal[m.to] || {};
@@ -366,10 +538,7 @@ function computeBatchBalances(batchId){
   });
   return { bal, subBal, received };
 }
-function stagesInUse(batchId){
-  const bal = computeBatchBalances(batchId).bal;
-  return Object.keys(bal);
-}
+function stagesInUse(batchId){ return Object.keys(computeBatchBalances(batchId).bal); }
 
 /* =====================================================================
    RENDER
@@ -377,9 +546,8 @@ function stagesInUse(batchId){
 function sortedBatches(){
   return state.batches.slice().sort((a,b)=> b.date.localeCompare(a.date) || a.code.localeCompare(b.code,undefined,{numeric:true}));
 }
-function batchLabel(b){
-  return `${b.code} — ${b.date}`;
-}
+function batchLabel(b){ return `${b.code} — ${b.date}`; }
+
 function renderPartSelect(){
   const filterSel = document.getElementById('filterPart');
   const prevFilter = filterSel.value;
@@ -415,10 +583,11 @@ function renderPartCombo(query){
       const isToday = b.date===todayStr();
       const item = document.createElement('div');
       item.className='combo-item';
-      item.innerHTML = `<span><span class="code">${b.code}</span> <span class="batchtag">${b.date}${isToday?' · today':''}</span></span><span class="desc">${b.desc||''}</span>`;
+      item.innerHTML = `<span><span class="code">${b.code}</span>${isToday?'<span class="batchtag">today</span>':`<span class="batchtag" style="background:var(--surface-3);color:var(--ink-soft);">${b.date}</span>`}</span><span class="desc">${b.desc||''}</span>`;
       item.addEventListener('mousedown', e=>{
         e.preventDefault();
         selectedBatchId = b.id;
+        resetEntry();
         closePartCombo();
         renderAll();
       });
@@ -435,24 +604,25 @@ function renderBatchList(){
   const el = document.getElementById('batchList');
   const b = state.batches.find(b=>b.id===selectedBatchId);
   el.innerHTML='';
-  if(!b){ return; }
+  if(!b) return;
   const siblings = batchesForCode(b.code);
   if(siblings.length<2) return;
   siblings.forEach(s=>{
     const pill = document.createElement('span');
     pill.className='batch-pill'+(s.id===selectedBatchId?' active':'');
-    pill.textContent = s.date + (s.date===todayStr()?' (today)':'');
-    pill.addEventListener('click', ()=>{ selectedBatchId=s.id; renderAll(); });
+    pill.textContent = s.date + (s.date===todayStr()?' · today':'');
+    pill.addEventListener('click', ()=>{ selectedBatchId=s.id; resetEntry(); renderAll(); });
     el.appendChild(pill);
   });
 }
 function renderPartMeta(){
   const meta = document.getElementById('partMeta');
   const b = state.batches.find(b=>b.id===selectedBatchId);
-  if(!b){ meta.textContent=''; return; }
+  if(!b){ meta.textContent='Create a batch to begin tracking.'; return; }
   const moves = batchMovements(b.id).length;
   meta.innerHTML = `<b>${b.desc||'No description'}</b> &nbsp;·&nbsp; Batch dated <b>${b.date}</b> &nbsp;·&nbsp; ${moves} movement${moves===1?'':'s'} recorded`;
 }
+
 function renderPipeline(){
   const el = document.getElementById('pipeline');
   el.innerHTML='';
@@ -460,108 +630,102 @@ function renderPipeline(){
   if(!b){ el.innerHTML = '<div class="hint">Create a batch to see its production progress.</div>'; return; }
   const { bal, subBal } = computeBatchBalances(b.id);
   const stages = Object.keys(bal);
-  if(stages.length===0){ el.innerHTML = '<div class="hint">No movements recorded yet for this batch.</div>'; return; }
-  // order: known suggestions first, then any custom stage names, dispatch-like always last
+  if(stages.length===0){ el.innerHTML = '<div class="hint">No movements recorded yet for this batch. Use Record Movement below to add the first one.</div>'; return; }
   const known = STAGE_SUGGESTIONS.filter(s=>stages.includes(s) && !isDispatchStage(s));
   const custom = stages.filter(s=>!STAGE_SUGGESTIONS.includes(s) && !isDispatchStage(s));
   const dispatchStages = stages.filter(s=>isDispatchStage(s));
   const ordered = [...known, ...custom, ...dispatchStages];
-  ordered.forEach(stageName=>{
+  ordered.forEach((stageName,i)=>{
     const qty = bal[stageName]||0;
     const card = document.createElement('div');
     const dispatchLike = isDispatchStage(stageName);
-    card.className = 'stage-card' + (qty===0 && !dispatchLike?' zero':'') + (dispatchLike?' dispatch':'');
+    card.className = 'stage-card' + (qty===0 && !dispatchLike?' zero':'') + (dispatchLike?' dispatch':'') + (pendingFrom===stageName?' selected':'');
+    card.style.animationDelay = (i*0.05)+'s';
     let subHtml='';
     if(subBal[stageName]){
       subHtml = '<div class="stage-sub">' + Object.entries(subBal[stageName]).map(([k,v])=>
-        `<div data-stage="${stageName}" data-process="${k}"><span>${k}</span><span>${v}</span></div>`).join('') + '</div>';
+        `<div data-stage="${stageName}" data-process="${k}" data-action="breakdown"><span>${k}</span><span>${v}</span></div>`).join('') + '</div>';
     }
-    card.innerHTML = `<p class="stage-name" data-stage="${stageName}">${stageName}</p><div class="stage-qty">${qty}</div><div class="stage-unit">${dispatchLike?'total dispatched (log only)':'balance held here'}</div>${subHtml}`;
+    card.innerHTML = `<p class="stage-name" data-stage="${stageName}" data-action="breakdown"><span>${stageName}</span><span class="tap-hint">view breakdown ↗</span></p><div class="stage-qty">${qty}</div><div class="stage-unit">${dispatchLike?'total dispatched (log only)':'tap card to move from here'}</div>${subHtml}`;
+    if(!dispatchLike && qty>0){
+      card.addEventListener('click', (e)=>{
+        if(e.target.closest('[data-action="breakdown"]')) return;
+        pendingFrom = stageName; renderAll(); focusQty();
+      });
+    }
     el.appendChild(card);
   });
-  // wire click-to-filter
-  el.querySelectorAll('.stage-name').forEach(node=>{
-    node.addEventListener('click', ()=> showBreakdown(node.getAttribute('data-stage'), null));
+  el.querySelectorAll('[data-action="breakdown"].stage-name').forEach(node=>{
+    node.addEventListener('click', (e)=>{ e.stopPropagation(); showBreakdown(node.getAttribute('data-stage'), null); });
   });
   el.querySelectorAll('.stage-sub div').forEach(node=>{
-    node.addEventListener('click', ()=> showBreakdown(node.getAttribute('data-stage'), node.getAttribute('data-process')));
+    node.addEventListener('click', (e)=>{ e.stopPropagation(); showBreakdown(node.getAttribute('data-stage'), node.getAttribute('data-process')); });
   });
 }
 
-// Plant-wide qty by part code currently sitting at a given stage (optionally a specific
-// sub-process within that stage), across every batch, regardless of which batch is selected.
-function showBreakdown(stageName, processName){
-  const panel = document.getElementById('breakdownPanel');
-  const body = document.getElementById('breakdownBody');
-  const heading = document.getElementById('breakdownHeading');
-  const totalEl = document.getElementById('breakdownTotal');
-  panel.style.display = '';
-  heading.textContent = processName ? `${stageName} — ${processName}` : stageName;
-
-  const rows = [];
-  state.batches.forEach(b=>{
-    const { bal, subBal } = computeBatchBalances(b.id);
-    let qty;
-    if(processName){
-      qty = (subBal[stageName] && subBal[stageName][processName]) || 0;
-    } else {
-      qty = bal[stageName] || 0;
-    }
-    if(qty !== 0){
-      rows.push({ code:b.code, date:b.date, desc:b.desc||'', qty });
-    }
-  });
-  rows.sort((a,b)=> b.qty - a.qty || a.code.localeCompare(b.code, undefined, {numeric:true}));
-
-  body.innerHTML='';
-  if(rows.length===0){
-    body.innerHTML = '<tr class="empty-row"><td colspan="4">Nothing currently sitting here.</td></tr>';
-  } else {
-    rows.forEach(r=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td><b>${r.code}</b></td><td>${r.date}</td><td>${r.desc}</td><td>${r.qty}</td>`;
-      body.appendChild(tr);
-    });
-  }
-  const total = rows.reduce((s,r)=>s+r.qty,0);
-  totalEl.textContent = rows.length ? `Total across all batches: ${total}` : '';
-  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
-document.getElementById('btnClearBreakdown').addEventListener('click', ()=>{
-  document.getElementById('breakdownPanel').style.display='none';
-});
 function collectAllStageNames(){
   const set = new Set(STAGE_SUGGESTIONS);
   state.movements.forEach(m=>{ if(m.from) set.add(m.from); if(m.to) set.add(m.to); });
   return [...set];
 }
-function renderFromStageOptions(){
-  const sel = document.getElementById('fromStage');
-  const b = state.batches.find(b=>b.id===selectedBatchId);
-  const inUse = b ? stagesInUse(b.id) : [];
-  sel.innerHTML = '<option value="">— New Production (no source stage) —</option>' +
-    inUse.map(s=>`<option value="${s}">${s}</option>`).join('');
-  onFromStageChange();
+
+function renderFlowChips(){
+  const fromChip = document.getElementById('fromChip');
+  const toChip = document.getElementById('toChip');
+  fromChip.textContent = pendingFrom ? pendingFrom : 'New Production';
+  fromChip.style.color = pendingFrom ? 'var(--ink)' : 'var(--ink-soft)';
+  toChip.textContent = pendingTo || 'Choose destination…';
+  toChip.classList.toggle('to', true);
+  document.getElementById('fromStage').value = pendingFrom || '';
+  document.getElementById('toStageInput').value = pendingTo || '';
+
+  fromChip.onclick = ()=>{ pendingFrom = null; renderAll(); };
+
+  // quick destination chips: suggestions + any custom stage names already used, excluding current "from"
+  const row = document.getElementById('toQuickRow');
+  const all = collectAllStageNames().filter(s=>s!==pendingFrom);
+  row.innerHTML='';
+  all.forEach(s=>{
+    const chip = document.createElement('span');
+    chip.className='chip-quick'+(pendingTo===s?' active':'');
+    chip.textContent = s;
+    chip.addEventListener('click', ()=>{ pendingTo = s; renderFlowChips(); focusQty(); });
+    row.appendChild(chip);
+  });
+  const customChip = document.createElement('span');
+  customChip.className='chip-quick';
+  customChip.textContent='+ Custom…';
+  customChip.addEventListener('click', ()=>{
+    const val = prompt('New stage name (e.g. Rewinding, QC Hold):');
+    if(val && val.trim()){ pendingTo = val.trim(); renderFlowChips(); focusQty(); }
+  });
+  row.appendChild(customChip);
+
+  updateMoveHint();
 }
-function renderStageDatalist(){
-  const dl = document.getElementById('stageOptions');
-  dl.innerHTML = collectAllStageNames().map(s=>`<option value="${s}">`).join('');
-}
-function onFromStageChange(){
-  const b = state.batches.find(b=>b.id===selectedBatchId);
+function focusQty(){ setTimeout(()=>document.getElementById('moveQty').focus(), 60); }
+function updateMoveHint(){
   const hint = document.getElementById('moveHint');
+  const b = state.batches.find(b=>b.id===selectedBatchId);
   if(!b){ hint.textContent='Create or select a batch first.'; hint.className='hint err'; return; }
-  const fromKey = document.getElementById('fromStage').value;
-  if(!fromKey){
-    hint.textContent = 'This records fresh production quantity entering the stage you type into "To Stage" — no deduction anywhere.';
+  if(!pendingTo){
+    hint.textContent = pendingFrom
+      ? `Pick a destination stage for stock leaving ${pendingFrom}.`
+      : 'This records fresh production quantity into whichever destination you pick — no deduction anywhere.';
+    hint.className='hint';
+    return;
+  }
+  if(!pendingFrom){
+    hint.innerHTML = `Adds new production straight into <b>${pendingTo}</b>.`;
     hint.className='hint';
   } else {
     const { bal } = computeBatchBalances(b.id);
-    const avail = bal[fromKey]||0;
-    hint.innerHTML = `Will deduct from <b>${fromKey}</b> (currently <b>${avail}</b> in this batch) and add to whatever "To Stage" you type — any stage, any order.`;
+    const avail = bal[pendingFrom]||0;
+    hint.innerHTML = `Will deduct from <b>${pendingFrom}</b> (currently <b>${avail}</b>) and add to <b>${pendingTo}</b>.`;
     hint.className='hint';
   }
 }
+function resetEntry(){ pendingFrom=null; pendingTo=null; }
 
 function renderLedger(){
   const body = document.getElementById('ledgerBody');
@@ -630,9 +794,43 @@ function renderSyncStatus(){
 }
 function renderAll(){
   renderPartSelect(); renderBatchList(); renderPartMeta(); renderPipeline();
-  renderFromStageOptions(); renderStageDatalist(); renderStageFilterOptions();
+  renderFlowChips(); renderStageFilterOptions();
   renderLedger(); renderSummary(); renderSyncStatus();
 }
+
+function showBreakdown(stageName, processName){
+  const panel = document.getElementById('breakdownPanel');
+  const body = document.getElementById('breakdownBody');
+  const heading = document.getElementById('breakdownHeading');
+  const totalEl = document.getElementById('breakdownTotal');
+  panel.style.display = '';
+  heading.textContent = processName ? `${stageName} — ${processName}` : stageName;
+
+  const rows = [];
+  state.batches.forEach(b=>{
+    const { bal, subBal } = computeBatchBalances(b.id);
+    let qty;
+    if(processName){ qty = (subBal[stageName] && subBal[stageName][processName]) || 0; }
+    else { qty = bal[stageName] || 0; }
+    if(qty !== 0) rows.push({ code:b.code, date:b.date, desc:b.desc||'', qty });
+  });
+  rows.sort((a,b)=> b.qty - a.qty || a.code.localeCompare(b.code, undefined, {numeric:true}));
+
+  body.innerHTML='';
+  if(rows.length===0){
+    body.innerHTML = '<tr class="empty-row"><td colspan="4">Nothing currently sitting here.</td></tr>';
+  } else {
+    rows.forEach(r=>{
+      const tr = document.createElement('tr');
+      tr.innerHTML = `<td><b>${r.code}</b></td><td>${r.date}</td><td>${r.desc}</td><td>${r.qty}</td>`;
+      body.appendChild(tr);
+    });
+  }
+  const total = rows.reduce((s,r)=>s+r.qty,0);
+  totalEl.textContent = rows.length ? `Total across all batches: ${total}` : '';
+  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+document.getElementById('btnClearBreakdown').addEventListener('click', ()=>{ document.getElementById('breakdownPanel').style.display='none'; });
 
 /* =====================================================================
    EVENTS
@@ -644,13 +842,11 @@ partSearchInput.addEventListener('keydown', e=>{
   if(e.key==='Escape'){ closePartCombo(); partSearchInput.blur(); }
   if(e.key==='Enter'){
     const matches = filterCombo(partSearchInput.value);
-    if(matches.length===1){ selectedBatchId = matches[0].id; closePartCombo(); renderAll(); partSearchInput.blur(); }
+    if(matches.length===1){ selectedBatchId = matches[0].id; resetEntry(); closePartCombo(); renderAll(); partSearchInput.blur(); }
   }
 });
 partSearchInput.addEventListener('blur', ()=>{ setTimeout(()=>{ closePartCombo(); renderPartSelect(); }, 120); });
 document.addEventListener('click', e=>{ if(!document.getElementById('partCombo').contains(e.target)) closePartCombo(); });
-
-document.getElementById('fromStage').addEventListener('change', onFromStageChange);
 
 function openNewPartModal(prefillCode){
   document.getElementById('newPartCode').value = prefillCode || '';
@@ -658,6 +854,7 @@ function openNewPartModal(prefillCode){
   document.getElementById('newBatchDate').value = todayStr();
   document.getElementById('newPartErr').style.display='none';
   document.getElementById('modalNewPart').classList.add('open');
+  setTimeout(()=>document.getElementById('newPartCode').focus(), 80);
 }
 document.getElementById('btnNewPart').addEventListener('click', ()=>openNewPartModal(''));
 document.getElementById('btnPullParts').addEventListener('click', ()=>pullFromSheet(true));
@@ -674,24 +871,27 @@ document.getElementById('btnSavePart').addEventListener('click', ()=>{
   }
   const b = { id: uid('b'), code, desc, date, createdAt: Date.now() };
   state.batches.push(b);
-  saveState(); selectedBatchId = b.id;
+  saveState(); selectedBatchId = b.id; resetEntry();
   document.getElementById('modalNewPart').classList.remove('open');
   renderAll();
   toast('New batch created: ' + code + ' (' + date + ')');
 });
+document.getElementById('newPartCode').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('btnSavePart').click(); });
+
+document.getElementById('moveQty').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('btnAddMove').click(); });
 
 document.getElementById('btnAddMove').addEventListener('click', ()=>{
   const hint = document.getElementById('moveHint');
   const b = state.batches.find(b=>b.id===selectedBatchId);
   if(!b){ hint.textContent='Create or select a batch first.'; hint.className='hint err'; return; }
-  const fromKey = document.getElementById('fromStage').value || null;
-  const toKey = document.getElementById('toStageInput').value.trim();
+  const fromKey = pendingFrom || null;
+  const toKey = (pendingTo||'').trim();
   const process = document.getElementById('processInput').value.trim() || null;
   const qty = parseFloat(document.getElementById('moveQty').value);
   const date = document.getElementById('moveDate').value || todayStr();
   const remarks = document.getElementById('moveRemarks').value.trim();
 
-  if(!toKey){ hint.textContent='Enter a "To Stage" name.'; hint.className='hint err'; return; }
+  if(!toKey){ hint.textContent='Tap a destination stage above (or "+ Custom…").'; hint.className='hint err'; return; }
   if(!qty || qty<=0){ hint.textContent='Enter a quantity greater than zero.'; hint.className='hint err'; return; }
   if(fromKey){
     const { bal } = computeBatchBalances(b.id);
@@ -707,14 +907,15 @@ document.getElementById('btnAddMove').addEventListener('click', ()=>{
   saveState();
   document.getElementById('moveQty').value='';
   document.getElementById('moveRemarks').value='';
-  document.getElementById('toStageInput').value='';
   document.getElementById('processInput').value='';
+  // keep "to" as the new "from" so consecutive forward moves are one tap+type each
+  pendingFrom = toKey; pendingTo = null;
   renderAll();
-  toast('Movement recorded.');
+  toast('Movement recorded — ' + qty + ' → ' + toKey);
 });
 
 document.getElementById('btnUndo').addEventListener('click', ()=>{
-  if(!lastMovementId){ toast('Nothing to undo.'); return; }
+  if(!lastMovementId){ toast('Nothing to undo.', true); return; }
   state.movements = state.movements.filter(m=>m.id!==lastMovementId);
   saveState(); lastMovementId=null;
   renderAll();
@@ -778,7 +979,7 @@ function currentSheetUrl(){ return document.getElementById('sheetUrl').value.tri
 
 document.getElementById('btnPush').addEventListener('click', async ()=>{
   const url = currentSheetUrl();
-  if(!url){ toast('Paste your Web App URL first.'); return; }
+  if(!url){ toast('Paste your Web App URL first.', true); return; }
   state.sheetUrl = url; saveState();
   const btn = document.getElementById('btnPush'); btn.disabled = true; btn.textContent='Pushing…';
   try{
@@ -793,7 +994,7 @@ document.getElementById('btnPush').addEventListener('click', async ()=>{
     } else { throw new Error(data.error || 'Unknown error'); }
   }catch(err){
     document.getElementById('syncHint').textContent = 'Push failed: ' + err.message + '. Check the URL and that the script is deployed for "Anyone".';
-    toast('Push failed — see Sheet Sync panel.');
+    toast('Push failed — see Sheet Sync panel.', true);
   }
   btn.disabled=false; btn.textContent='Push to Sheet';
   renderSyncStatus();
@@ -801,7 +1002,7 @@ document.getElementById('btnPush').addEventListener('click', async ()=>{
 
 async function pullFromSheet(fromQuickButton){
   const url = fromQuickButton ? state.sheetUrl : currentSheetUrl();
-  if(!url){ toast('Connect a Google Sheet first (Sheet Sync, top right).'); if(fromQuickButton) document.getElementById('modalSync').classList.add('open'); return; }
+  if(!url){ toast('Connect a Google Sheet first (Sheet Sync, top right).', true); if(fromQuickButton) document.getElementById('modalSync').classList.add('open'); return; }
   state.sheetUrl = url; saveState();
   const btn = fromQuickButton ? document.getElementById('btnPullParts') : document.getElementById('btnPull');
   const original = btn.textContent;
@@ -821,7 +1022,7 @@ async function pullFromSheet(fromQuickButton){
     } else { throw new Error(data.error || 'Unknown error'); }
   }catch(err){
     document.getElementById('syncHint').textContent = 'Pull failed: ' + err.message;
-    toast('Pull failed — see Sheet Sync panel.');
+    toast('Pull failed — see Sheet Sync panel.', true);
   }
   btn.disabled=false; btn.textContent=original;
   renderSyncStatus();
