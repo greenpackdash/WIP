@@ -365,7 +365,8 @@ footer{text-align:center;font-size:11.5px;color:var(--ink-faint);padding:30px 14
     <div class="entry-grid">
       <div class="field">
         <label class="label-cap">Sub-process (optional)</label>
-        <input type="text" id="processInput" placeholder="e.g. GD, Auto Stitching">
+        <input type="text" id="processInput" placeholder="e.g. Auto Stitching, Insun">
+        <div class="chip-quick-row" id="subProcessQuickRow" style="display:none;margin-top:6px;"></div>
       </div>
       <div class="field">
         <label class="label-cap">Date</label>
@@ -439,7 +440,7 @@ footer{text-align:center;font-size:11.5px;color:var(--ink-faint);padding:30px 14
     <h2><span class="idx">3</span> Batch Summary — All Open Batches</h2>
     <div class="table-wrap">
       <table>
-        <thead><tr><th>Part Code</th><th>Batch Date</th><th>Description</th><th>Current Stage(s) &amp; Qty</th><th>Dispatched</th></tr></thead>
+        <thead><tr><th>Part Code</th><th>Batch Date</th><th>Description</th><th>Current Stage(s) &amp; Qty</th></tr></thead>
         <tbody id="summaryBody"></tbody>
       </table>
     </div>
@@ -519,8 +520,9 @@ footer{text-align:center;font-size:11.5px;color:var(--ink-faint);padding:30px 14
    ===================================================================== */
 const STORAGE_KEY = 'wip_tracker_v2'; // same schema as v2, just a new UI
 
-const STAGE_SUGGESTIONS = ['Corrugation','Printing','Finishing','Packaging','Dispatch'];
-const DISPATCH_WORDS = ['dispatch','dispatched','despatch','fg','finished good','finished goods'];
+const STAGE_SUGGESTIONS = ['Corrugation','Printing','Finishing & Packaging'];
+const FINAL_STAGE = 'Finishing & Packaging'; // last point the supervisor can actually confirm/verify
+const SUBPROCESS_SUGGESTIONS = ['Insun (Stitching/Gluing)','Manual Gluing','Auto Stitching','Semi-Auto Stitching','Packaging'];
 
 function loadState(){
   try{
@@ -570,7 +572,7 @@ document.getElementById('btnTheme').addEventListener('click', ()=>{
 
 function uid(p){ return (p||'m') + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
 function todayStr(){ return new Date().toISOString().slice(0,10); }
-function isDispatchStage(name){ if(!name) return false; return DISPATCH_WORDS.includes(String(name).trim().toLowerCase()); }
+function isFinalStage(name){ if(!name) return false; return String(name).trim() === FINAL_STAGE; }
 function toast(msg, isErr){
   const t = document.getElementById('toast');
   document.getElementById('toastMsg').textContent = msg;
@@ -585,7 +587,7 @@ function batchesForCode(code){ return state.batches.filter(b=>b.code===code).sor
 function computeBatchBalances(batchId){
   const bal = {}; const subBal = {}; const received = {};
   batchMovements(batchId).sort((a,b)=>a.ts-b.ts).forEach(m=>{
-    if(m.from && !isDispatchStage(m.from)) bal[m.from] = (bal[m.from]||0) - m.qty;
+    if(m.from) bal[m.from] = (bal[m.from]||0) - m.qty;
     bal[m.to] = (bal[m.to]||0) + m.qty;
     received[m.to] = (received[m.to]||0) + m.qty;
     if(m.process){
@@ -688,23 +690,24 @@ function renderPipeline(){
   const { bal, subBal } = computeBatchBalances(b.id);
   const stages = Object.keys(bal);
   if(stages.length===0){ el.innerHTML = '<div class="hint">No movements recorded yet for this batch. Use Record Movement below to add the first one.</div>'; return; }
-  const known = STAGE_SUGGESTIONS.filter(s=>stages.includes(s) && !isDispatchStage(s));
-  const custom = stages.filter(s=>!STAGE_SUGGESTIONS.includes(s) && !isDispatchStage(s));
-  const dispatchStages = stages.filter(s=>isDispatchStage(s));
-  const ordered = [...known, ...custom, ...dispatchStages];
+  const known = STAGE_SUGGESTIONS.filter(s=>stages.includes(s) && !isFinalStage(s));
+  const custom = stages.filter(s=>!STAGE_SUGGESTIONS.includes(s) && !isFinalStage(s));
+  const finalStages = stages.filter(s=>isFinalStage(s));
+  const ordered = [...known, ...custom, ...finalStages];
   ordered.forEach((stageName,i)=>{
     const qty = bal[stageName]||0;
     const card = document.createElement('div');
-    const dispatchLike = isDispatchStage(stageName);
-    card.className = 'stage-card' + (qty===0 && !dispatchLike?' zero':'') + (dispatchLike?' dispatch':'') + (pendingFrom===stageName?' selected':'');
+    const isFinal = isFinalStage(stageName);
+    card.className = 'stage-card' + (qty===0?' zero':'') + (isFinal?' dispatch':'') + (pendingFrom===stageName?' selected':'');
     card.style.animationDelay = (i*0.05)+'s';
     let subHtml='';
     if(subBal[stageName]){
       subHtml = '<div class="stage-sub">' + Object.entries(subBal[stageName]).map(([k,v])=>
         `<div data-stage="${stageName}" data-process="${k}" data-action="breakdown"><span>${k}</span><span>${v}</span></div>`).join('') + '</div>';
     }
-    card.innerHTML = `<p class="stage-name" data-stage="${stageName}" data-action="breakdown"><span>${stageName}</span><span class="tap-hint">view breakdown ↗</span></p><div class="stage-qty">${qty}</div><div class="stage-unit">${dispatchLike?'total dispatched (log only)':'tap card to move from here'}</div>${subHtml}`;
-    if(!dispatchLike && qty>0){
+    const unitLabel = isFinal ? 'ready stock — last point we can verify (what happens after this is outside our tracking)' : 'tap card to move from here';
+    card.innerHTML = `<p class="stage-name" data-stage="${stageName}" data-action="breakdown"><span>${stageName}</span><span class="tap-hint">view breakdown ↗</span></p><div class="stage-qty">${qty}</div><div class="stage-unit">${unitLabel}</div>${subHtml}`;
+    if(qty>0){
       card.addEventListener('click', (e)=>{
         if(e.target.closest('[data-action="breakdown"]')) return;
         pendingFrom = stageName; renderAll(); focusQty();
@@ -757,6 +760,24 @@ function renderFlowChips(){
     if(val && val.trim()){ pendingTo = val.trim(); renderFlowChips(); focusQty(); }
   });
   row.appendChild(customChip);
+
+  // sub-process quick chips only make sense once stock is entering the Finishing & Packaging stage
+  const subRow = document.getElementById('subProcessQuickRow');
+  const processInput = document.getElementById('processInput');
+  if(isFinalStage(pendingTo)){
+    subRow.style.display='';
+    subRow.innerHTML='';
+    SUBPROCESS_SUGGESTIONS.forEach(sp=>{
+      const chip = document.createElement('span');
+      chip.className='chip-quick'+(processInput.value===sp?' active':'');
+      chip.textContent = sp;
+      chip.addEventListener('click', ()=>{ processInput.value = sp; renderFlowChips(); });
+      subRow.appendChild(chip);
+    });
+  } else {
+    subRow.style.display='none';
+    subRow.innerHTML='';
+  }
 
   updateMoveHint();
 }
@@ -827,17 +848,15 @@ function renderSummary(){
   const body = document.getElementById('summaryBody');
   body.innerHTML='';
   if(state.batches.length===0){
-    body.innerHTML = '<tr class="empty-row"><td colspan="5">No batches yet.</td></tr>';
+    body.innerHTML = '<tr class="empty-row"><td colspan="4">No batches yet.</td></tr>';
     return;
   }
   sortedBatches().forEach(b=>{
     const { bal } = computeBatchBalances(b.id);
-    const dispatchStageName = Object.keys(bal).find(isDispatchStage);
-    const dispatched = dispatchStageName ? (bal[dispatchStageName]||0) : 0;
-    const stageStr = Object.entries(bal).filter(([k])=>!isDispatchStage(k) && bal[k]!==0)
+    const stageStr = Object.entries(bal).filter(([k])=>bal[k]!==0)
       .map(([k,v])=>`${k}: ${v}`).join(', ') || '—';
     const tr = document.createElement('tr');
-    tr.innerHTML = `<td><b>${b.code}</b></td><td>${b.date}</td><td>${b.desc||''}</td><td>${stageStr}</td><td>${dispatched}</td>`;
+    tr.innerHTML = `<td><b>${b.code}</b></td><td>${b.date}</td><td>${b.desc||''}</td><td>${stageStr}</td>`;
     body.appendChild(tr);
   });
 }
@@ -1006,14 +1025,12 @@ document.getElementById('btnClearFilters').addEventListener('click', ()=>{
 /* ---------------- Export to Excel ---------------- */
 document.getElementById('btnExport').addEventListener('click', ()=>{
   const wb = XLSX.utils.book_new();
-  const allStages = collectAllStageNames().filter(s=>!isDispatchStage(s));
-  const dispatchName = collectAllStageNames().find(isDispatchStage) || 'Dispatch';
+  const allStages = collectAllStageNames();
 
-  const head = ['ITEM CODE','BATCH DATE', ...allStages, dispatchName.toUpperCase(), 'DESCRIPTION'];
+  const head = ['ITEM CODE','BATCH DATE', ...allStages, 'DESCRIPTION'];
   const rows = sortedBatches().map(b=>{
     const { bal } = computeBatchBalances(b.id);
-    const dispVal = Object.keys(bal).filter(isDispatchStage).reduce((s,k)=>s+bal[k],0);
-    return [b.code, b.date, ...allStages.map(s=>bal[s]||0), dispVal, b.desc||''];
+    return [b.code, b.date, ...allStages.map(s=>bal[s]||0), b.desc||''];
   });
   const ws1 = XLSX.utils.aoa_to_sheet([[`WIP BATCH SUMMARY — ${todayStr()}`],[],head, ...rows]);
   XLSX.utils.book_append_sheet(wb, ws1, 'Batch Summary');
@@ -1131,10 +1148,8 @@ async function sendSummaryEmail(){
 
   const summaryRows = sortedBatches().map(b=>{
     const { bal } = computeBatchBalances(b.id);
-    const dispatchStageName = Object.keys(bal).find(isDispatchStage);
-    const dispatched = dispatchStageName ? (bal[dispatchStageName]||0) : 0;
-    const stageStr = Object.entries(bal).filter(([k])=>!isDispatchStage(k) && bal[k]!==0).map(([k,v])=>`${k}: ${v}`).join(', ') || '—';
-    return { code:b.code, date:b.date, desc:b.desc||'', stages:stageStr, dispatched };
+    const stageStr = Object.entries(bal).filter(([k])=>bal[k]!==0).map(([k,v])=>`${k}: ${v}`).join(', ') || '—';
+    return { code:b.code, date:b.date, desc:b.desc||'', stages:stageStr };
   });
 
   const btn = document.getElementById('btnSendSummary'); if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
