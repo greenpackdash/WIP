@@ -135,10 +135,10 @@ input::placeholder{color:var(--ink-faint);}
 .combo-list{
   position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--surface-2);
   border:1px solid var(--line);border-radius:14px;max-height:300px;overflow-y:auto;z-index:30;
-  box-shadow:0 20px 44px rgba(0,0,0,.5);opacity:0;
+  box-shadow:0 20px 44px rgba(0,0,0,.5);opacity:0;display:none;
   pointer-events:none;transition:opacity .06s linear;
 }
-.combo-list.open{opacity:1;pointer-events:auto;}
+.combo-list.open{opacity:1;display:block;pointer-events:auto;}
 .combo-item{padding:12px 14px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:10px;transition:background .1s;}
 .combo-item:last-child{border-bottom:none;}
 .combo-item:hover,.combo-item.active{background:var(--surface-3);}
@@ -654,7 +654,7 @@ function renderPartCombo(query){
   const quickAdd = document.getElementById('quickAddLink');
   if(quickAdd) quickAdd.addEventListener('mousedown', e=>{ e.preventDefault(); closePartCombo(); openNewPartModal(query); });
 }
-function openPartCombo(){ renderPartCombo(document.getElementById('partSearch').value); document.getElementById('partList').classList.add('open'); }
+function openPartCombo(){ renderPartCombo(''); document.getElementById('partList').classList.add('open'); }
 function closePartCombo(){ document.getElementById('partList').classList.remove('open'); }
 
 function renderBatchList(){
@@ -896,7 +896,7 @@ document.getElementById('btnClearBreakdown').addEventListener('click', ()=>{ doc
    EVENTS
    ===================================================================== */
 const partSearchInput = document.getElementById('partSearch');
-partSearchInput.addEventListener('focus', ()=>openPartCombo());
+partSearchInput.addEventListener('focus', ()=>{ openPartCombo(); partSearchInput.select(); });
 partSearchInput.addEventListener('input', e=>renderPartCombo(e.target.value));
 partSearchInput.addEventListener('keydown', e=>{
   if(e.key==='Escape'){ closePartCombo(); partSearchInput.blur(); }
