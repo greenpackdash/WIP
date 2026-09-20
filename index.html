@@ -1122,6 +1122,25 @@ document.getElementById('btnPush').addEventListener('click', async ()=>{
   renderSyncStatus();
 });
 
+// For every code in the Parts master list, creates today's batch automatically
+// if one doesn't already exist for that code+date. Returns how many were created.
+function autoCreateTodaysBatches(){
+  const today = todayStr();
+  const existingKeys = new Set(state.batches.map(b=>b.code+'|'+b.date));
+  let created = 0;
+  (state.knownPartCodes||[]).forEach(p=>{
+    const code = (p.code||p).toString().trim();
+    if(!code) return;
+    const key = code+'|'+today;
+    if(existingKeys.has(key)) return;
+    const b = { id: uid('b'), code, desc: p.desc||'', date: today, createdAt: Date.now() };
+    state.batches.push(b);
+    existingKeys.add(key);
+    created++;
+  });
+  return created;
+}
+
 async function pullFromSheet(fromQuickButton){
   const url = fromQuickButton ? state.sheetUrl : currentSheetUrl();
   if(!url){ toast('Connect a Google Sheet first (Sheet Sync, top right).', true); if(fromQuickButton) document.getElementById('modalSync').classList.add('open'); return; }
@@ -1139,9 +1158,19 @@ async function pullFromSheet(fromQuickButton){
       normalizeMovements(data.movements||[]).forEach(m=>{ if(!knownIds.has(m.id)){ state.movements.push(m); knownIds.add(m.id); } });
       (data.batches||[]).forEach(b=>{ if(!knownBatches.has(b.id)){ state.batches.push(b); knownBatches.add(b.id); newBatches++; } });
       if(Array.isArray(data.partCodes)) state.knownPartCodes = data.partCodes;
+      const autoCreated = autoCreateTodaysBatches();
       saveState(); renderAll();
       document.getElementById('syncHint').textContent = 'Pulled latest data from the sheet.';
-      toast(fromQuickButton ? `Refreshed — ${newBatches} new batch(es).` : 'Pulled from Google Sheet.');
+      const totalNew = newBatches + autoCreated;
+      toast(fromQuickButton
+        ? `Refreshed — ${totalNew} new batch(es)${autoCreated?` (${autoCreated} auto-created from Parts list)`:''}.`
+        : 'Pulled from Google Sheet.');
+      // push the freshly auto-created batches back to the sheet so they persist
+      if(autoCreated>0){
+        try{
+          await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'push', batches: state.batches, movements: [] }) });
+        }catch(e){ /* silent — will sync on next manual push if this fails */ }
+      }
     } else { throw new Error(data.error || 'Unknown error'); }
   }catch(err){
     document.getElementById('syncHint').textContent = 'Pull failed: ' + err.message;
