@@ -455,7 +455,8 @@ footer{text-align:center;font-size:11.5px;color:var(--ink-faint);padding:30px 14
     <p class="desc">Enter the part code for a new plan. If this code already has an open batch from a previous day, that batch keeps running separately — this creates a brand-new one dated today (or the date you pick).</p>
     <div class="field">
       <label class="label-cap">Part / Item Code</label>
-      <input type="text" id="newPartCode" placeholder="e.g. 61031994">
+      <input type="text" id="newPartCode" placeholder="e.g. 61031994" list="knownCodesList">
+      <datalist id="knownCodesList"></datalist>
     </div>
     <div class="field">
       <label class="label-cap">Description (optional)</label>
@@ -524,11 +525,32 @@ const STORAGE_KEY = 'wip_tracker_v2'; // same schema as v2, just a new UI
 // it's hosted. Every device that opens it will then connect automatically —
 // nobody has to type the URL into Sheet Sync again. Leave it as '' if you'd
 // rather each device connect manually via the Sheet Sync panel instead.
-const DEFAULT_SHEET_URL = '';
+const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyh96DqwaAVmAZQ9mAIJ2ptajWS3a8Ca52CUYY5ibDkkHnHidVcxklFBIGDLbVDJ1Un2g/exec';
 
 const STAGE_SUGGESTIONS = ['Corrugation','Printing','Finishing & Packaging'];
 const FINAL_STAGE = 'Finishing & Packaging'; // last point the supervisor can actually confirm/verify
 const SUBPROCESS_SUGGESTIONS = ['Insun (Stitching/Gluing)','Manual Gluing','Auto Stitching','Semi-Auto Stitching','Packaging'];
+
+// Cleans up messy/legacy stage names (different casing, old sub-stages, old
+// Dispatch/FG concept) so everything collapses onto the 3 real stages instead
+// of showing duplicate cards like "Corrugation" and "corrugation" side by side.
+function normalizeStageName(name){
+  if(!name) return name;
+  const low = String(name).trim().toLowerCase();
+  if(low.includes('corrugat')) return 'Corrugation';
+  if(low.includes('print')) return 'Printing';
+  if(low.includes('finish') || low.includes('packag') || low.includes('insun') ||
+     low.includes('stitch') || low.includes('glu') || low.includes('dispatch') ||
+     low.includes('despatch') || low === 'fg') return FINAL_STAGE;
+  return String(name).trim(); // unrecognized custom stage (e.g. a typo) — left as typed
+}
+function normalizeMovements(movements){
+  return (movements||[]).map(m=>({
+    ...m,
+    from: m.from ? normalizeStageName(m.from) : m.from,
+    to: normalizeStageName(m.to)
+  }));
+}
 
 function loadState(){
   try{
@@ -536,19 +558,20 @@ function loadState(){
     if(raw){
       const parsed = JSON.parse(raw);
       if(!parsed.sheetUrl && DEFAULT_SHEET_URL) parsed.sheetUrl = DEFAULT_SHEET_URL;
+      parsed.movements = normalizeMovements(parsed.movements);
       return parsed;
     }
     const old = localStorage.getItem('wip_tracker_v1');
     if(old){
       const o = JSON.parse(old);
       const batches = (o.parts||[]).map(p=>({ id:'b_'+p.code+'_legacy', code:p.code, desc:p.desc||'', date:(new Date(p.createdAt||Date.now())).toISOString().slice(0,10), createdAt:p.createdAt||Date.now() }));
-      const movements = (o.movements||[]).map(m=>({
+      const movements = normalizeMovements((o.movements||[]).map(m=>({
         id:m.id, batchId:'b_'+m.partCode+'_legacy', partCode:m.partCode,
         from: m.from ? (m.from==='fg'?'Dispatch':m.from) : null,
         to: m.to==='fg' ? 'Dispatch' : m.to,
         process: m.process||m.fromProcess||null,
         qty:m.qty, date:m.date, remarks:m.remarks||'', ts:m.ts, dirty:true
-      }));
+      })));
       return { batches, movements, sheetUrl:o.sheetUrl || DEFAULT_SHEET_URL || '' };
     }
   }catch(e){}
@@ -559,6 +582,7 @@ function saveState(){
 }
 
 let state = loadState();
+saveState(); // persist any stage-name cleanup immediately so it doesn't get re-run every load
 let selectedBatchId = state.batches[0] ? state.batches[0].id : null;
 let lastMovementId = null;
 let pendingFrom = null;   // stage name or null (= new production)
@@ -942,10 +966,18 @@ function openNewPartModal(prefillCode){
   document.getElementById('newPartDesc').value='';
   document.getElementById('newBatchDate').value = todayStr();
   document.getElementById('newPartErr').style.display='none';
+  const dl = document.getElementById('knownCodesList');
+  dl.innerHTML = (state.knownPartCodes||[]).map(p=>`<option value="${(p.code||p).toString()}">${p.desc?p.desc:''}</option>`).join('');
   document.getElementById('modalNewPart').classList.add('open');
   setTimeout(()=>document.getElementById('newPartCode').focus(), 80);
 }
 document.getElementById('btnNewPart').addEventListener('click', ()=>openNewPartModal(''));
+document.getElementById('newPartCode').addEventListener('input', (e)=>{
+  const match = (state.knownPartCodes||[]).find(p=>(p.code||p).toString()===e.target.value.trim());
+  if(match && match.desc && !document.getElementById('newPartDesc').value){
+    document.getElementById('newPartDesc').value = match.desc;
+  }
+});
 document.getElementById('btnPullParts').addEventListener('click', ()=>pullFromSheet(true));
 document.getElementById('btnCancelPart').addEventListener('click', ()=>document.getElementById('modalNewPart').classList.remove('open'));
 document.getElementById('btnSavePart').addEventListener('click', ()=>{
@@ -1104,8 +1136,9 @@ async function pullFromSheet(fromQuickButton){
       const knownIds = new Set(state.movements.map(m=>m.id));
       const knownBatches = new Set(state.batches.map(b=>b.id));
       let newBatches = 0;
-      (data.movements||[]).forEach(m=>{ if(!knownIds.has(m.id)){ state.movements.push(m); knownIds.add(m.id); } });
+      normalizeMovements(data.movements||[]).forEach(m=>{ if(!knownIds.has(m.id)){ state.movements.push(m); knownIds.add(m.id); } });
       (data.batches||[]).forEach(b=>{ if(!knownBatches.has(b.id)){ state.batches.push(b); knownBatches.add(b.id); newBatches++; } });
+      if(Array.isArray(data.partCodes)) state.knownPartCodes = data.partCodes;
       saveState(); renderAll();
       document.getElementById('syncHint').textContent = 'Pulled latest data from the sheet.';
       toast(fromQuickButton ? `Refreshed — ${newBatches} new batch(es).` : 'Pulled from Google Sheet.');
