@@ -520,6 +520,12 @@ footer{text-align:center;font-size:11.5px;color:var(--ink-faint);padding:30px 14
    ===================================================================== */
 const STORAGE_KEY = 'wip_tracker_v2'; // same schema as v2, just a new UI
 
+// Paste your Apps Script Web App URL here ONCE, then re-upload this file wherever
+// it's hosted. Every device that opens it will then connect automatically —
+// nobody has to type the URL into Sheet Sync again. Leave it as '' if you'd
+// rather each device connect manually via the Sheet Sync panel instead.
+const DEFAULT_SHEET_URL = '';
+
 const STAGE_SUGGESTIONS = ['Corrugation','Printing','Finishing & Packaging'];
 const FINAL_STAGE = 'Finishing & Packaging'; // last point the supervisor can actually confirm/verify
 const SUBPROCESS_SUGGESTIONS = ['Insun (Stitching/Gluing)','Manual Gluing','Auto Stitching','Semi-Auto Stitching','Packaging'];
@@ -527,7 +533,11 @@ const SUBPROCESS_SUGGESTIONS = ['Insun (Stitching/Gluing)','Manual Gluing','Auto
 function loadState(){
   try{
     const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw) return JSON.parse(raw);
+    if(raw){
+      const parsed = JSON.parse(raw);
+      if(!parsed.sheetUrl && DEFAULT_SHEET_URL) parsed.sheetUrl = DEFAULT_SHEET_URL;
+      return parsed;
+    }
     const old = localStorage.getItem('wip_tracker_v1');
     if(old){
       const o = JSON.parse(old);
@@ -539,10 +549,10 @@ function loadState(){
         process: m.process||m.fromProcess||null,
         qty:m.qty, date:m.date, remarks:m.remarks||'', ts:m.ts, dirty:true
       }));
-      return { batches, movements, sheetUrl:o.sheetUrl||'' };
+      return { batches, movements, sheetUrl:o.sheetUrl || DEFAULT_SHEET_URL || '' };
     }
   }catch(e){}
-  return { batches: [], movements: [], sheetUrl: '' };
+  return { batches: [], movements: [], sheetUrl: DEFAULT_SHEET_URL || '' };
 }
 function saveState(){
   try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ toast('Could not save locally.', true); }
