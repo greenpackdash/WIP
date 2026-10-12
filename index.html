@@ -400,13 +400,12 @@ const STAGES = [
   { k:'AUTO',        label:'Auto Stitching',       c:'#5b8def' },
   { k:'SEMI',        label:'Semi-Auto Stitching',  c:'#2fbf91' },
   { k:'MANUAL',      label:'Manual Glueing',       c:'#e58a5b' },
-  { k:'REFRAME',     label:'Reframe',              c:'#e5586e' },
   { k:'PACKAGING',   label:'Packaging',            c:'#41b6d6' },
   { k:'OTHER',       label:'Other',                c:'#8b93a7' }
 ];
 const STAGE_BY = Object.fromEntries(STAGES.map(s => [s.k, s]));
-const ROUTE_OPTIONS = [['', 'Not decided yet'], ['AUTO','Auto Stitching'], ['SEMI','Semi-Auto Stitching'], ['MANUAL','Manual Glueing'], ['REFRAME','Reframe'], ['PACKAGING','Packaging'], ['OTHER','Other']];
-const TRIVIAL_NOTES = ['AUTO STICH','AUTO STITCH','AUTO','SEMI AUTO','SEMI','GLUING','GLUEING','MANUAL','PACKING','PACKAGING','REFRAME'];
+const ROUTE_OPTIONS = [['', 'Not decided yet'], ['AUTO','Auto Stitching'], ['SEMI','Semi-Auto Stitching'], ['MANUAL','Manual Glueing'], ['PACKAGING','Packaging'], ['OTHER','Other']];
+const TRIVIAL_NOTES = ['AUTO STICH','AUTO STITCH','AUTO','SEMI AUTO','SEMI','GLUING','GLUEING','MANUAL','PACKING','PACKAGING'];
 
 let TOKEN = sessionStorage.getItem('svd_token') || '';
 let SESSION = null; try { SESSION = JSON.parse(sessionStorage.getItem('svd_session') || 'null'); } catch(e) {}
