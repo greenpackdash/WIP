@@ -3,1250 +3,807 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>WIP Tracker — Box Plant</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<meta name="theme-color" content="#0b0d12">
+<title>WIP Tracker — MIS</title>
 <style>
-:root{
-  --bg:#0B0D12;
-  --bg-grad-1:#0B0D12;
-  --bg-grad-2:#11141C;
-  --surface:#151924;
-  --surface-2:#1B2030;
-  --surface-3:#212739;
-  --line:#2A3040;
-  --line-soft:#1E2330;
-  --ink:#EDEFF5;
-  --ink-soft:#8A90A6;
-  --ink-faint:#5B617A;
-  --amber:#F5A524;
-  --amber-soft:#3A2E12;
-  --amber-glow:rgba(245,165,36,.35);
-  --teal:#2DD4BF;
-  --teal-soft:#0F2E2A;
-  --violet:#8B7BF0;
-  --danger:#F2555A;
-  --danger-soft:#3A1518;
-  --ok:#3ECF7E;
-  --ok-soft:#123522;
-  --font-head:'Sora',system-ui,sans-serif;
-  --font-body:'Inter',system-ui,-apple-system,sans-serif;
-  --radius-lg:18px;
-  --radius-md:12px;
-  --radius-sm:8px;
-  --ease:cubic-bezier(.22,1,.36,1);
-}
-:root[data-theme="light"]{
-  --bg:#F4F5F8;
-  --bg-grad-1:#F4F5F8;
-  --bg-grad-2:#ECEEF3;
-  --surface:#FFFFFF;
-  --surface-2:#F6F7FA;
-  --surface-3:#ECEEF3;
-  --line:#DDE1E9;
-  --line-soft:#E6E9F0;
-  --ink:#171A21;
-  --ink-soft:#5B6172;
-  --ink-faint:#8B90A0;
-  --amber-soft:#FFF1D6;
-  --teal-soft:#DDF7F2;
-  --danger-soft:#FDE3E4;
-  --ok-soft:#E1F7EA;
-}
-*{box-sizing:border-box;}
-html,body{margin:0;padding:0;}
-body{
-  background:
-    radial-gradient(1200px 600px at 90% -10%, rgba(139,123,240,.10), transparent 60%),
-    radial-gradient(900px 500px at 5% 0%, rgba(245,165,36,.08), transparent 55%),
-    linear-gradient(180deg,var(--bg-grad-1),var(--bg-grad-2));
-  background-attachment:fixed;
-  color:var(--ink);
-  font-family:var(--font-body);
-  font-size:15px;
-  line-height:1.5;
-  -webkit-font-smoothing:antialiased;
-  padding-bottom:60px;
-  min-height:100vh;
-  transition:background .25s ease, color .25s ease;
-}
-h1,h2,h3,.label-cap{font-family:var(--font-head);}
-*{scrollbar-width:thin;scrollbar-color:var(--line) transparent;}
-::-webkit-scrollbar{height:8px;width:8px;}
-::-webkit-scrollbar-thumb{background:var(--line);border-radius:8px;}
-:focus-visible{outline:2px solid var(--amber);outline-offset:2px;border-radius:4px;}
+  :root {
+    --bg: #0b0d12;
+    --bg-grad: radial-gradient(1200px 600px at 10% -10%, rgba(91,141,239,.10), transparent 60%),
+               radial-gradient(1000px 600px at 100% 0%, rgba(63,208,160,.08), transparent 55%), #0b0d12;
+    --panel: #12151c; --panel-2: #191d27; --panel-3: #1e2330;
+    --border: #262b38; --border-soft: #1d212b; --border-hi: #333a4a;
+    --text: #eef0f4; --muted: #8b93a7;
+    --accent: #5b8def; --accent-2: #3fd0a0; --warn: #eab84d; --danger: #e5586e;
+    --radius: 14px; --radius-sm: 9px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", "Noto Sans Devanagari", Noto Sans, Roboto, sans-serif;
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.25); --shadow-md: 0 10px 30px rgba(0,0,0,.35);
+    --ease: cubic-bezier(.4,0,.2,1);
+  }
+  :root[data-theme="light"] {
+    --bg: #f4f6fa;
+    --bg-grad: radial-gradient(1000px 500px at 10% -10%, rgba(91,141,239,.10), transparent 60%), #f4f6fa;
+    --panel: #ffffff; --panel-2: #f7f8fb; --panel-3: #eef1f6;
+    --border: #dfe3ec; --border-soft: #eceff5; --border-hi: #c9cfdd;
+    --text: #20232b; --muted: #667085;
+    --accent: #3b6fe0; --accent-2: #047857; --warn: #b77900; --danger: #c93a52;
+    --shadow-sm: 0 1px 2px rgba(30,41,59,.06); --shadow-md: 0 10px 30px rgba(30,41,59,.12);
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { color-scheme: dark; }
+  :root[data-theme="light"] { color-scheme: light; }
+  body { margin:0; background:var(--bg-grad); background-attachment:fixed; color:var(--text); font-family:var(--font);
+         padding:20px 24px 80px; animation: fadeIn .35s var(--ease); }
+  @keyframes fadeIn { from{opacity:0} to{opacity:1} }
+  ::selection { background: rgba(91,141,239,.35); }
+  ::-webkit-scrollbar { width:10px; height:10px; } ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:8px; }
+  h1 { font-size:20px; margin:0; letter-spacing:-.01em; }
+  .sub { color:var(--muted); font-size:13px; margin-top:4px; }
+  .muted { color:var(--muted); }
 
-.wrap{max-width:1180px;margin:0 auto;padding:0 18px;}
+  /* ---------- top bar ---------- */
+  .topbar { display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-bottom:18px; }
+  .brand { display:flex; align-items:center; gap:14px; min-width:0; }
+  .brand-logo { height:40px; width:auto; background:#fff; padding:4px 6px; border-radius:8px; }
+  .top-actions { display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .conn { font-size:12px; padding:5px 12px 5px 10px; border-radius:999px; border:1px solid var(--border); color:var(--muted);
+          display:inline-flex; align-items:center; gap:6px; }
+  .conn::before { content:''; width:7px; height:7px; border-radius:50%; background:var(--muted); }
+  .conn.ok { color:var(--accent-2); border-color:rgba(63,208,160,.3); background:rgba(63,208,160,.06); }
+  .conn.ok::before { background:var(--accent-2); box-shadow:0 0 8px rgba(63,208,160,.6); }
+  .conn.err { color:var(--danger); border-color:rgba(229,88,110,.3); background:rgba(229,88,110,.06); }
+  .conn.err::before { background:var(--danger); }
+  .theme-toggle { width:34px; height:34px; padding:0; display:grid; place-items:center; background:transparent; color:var(--muted); border:1px solid var(--border); font-size:15px; }
 
-/* ---------- Header ---------- */
-header.top{
-  position:sticky;top:0;z-index:40;
-  background:rgba(11,13,18,.78);
-  backdrop-filter:blur(14px) saturate(140%);
-  border-bottom:1px solid var(--line-soft);
-}
-header.top .wrap{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;gap:14px;flex-wrap:wrap;}
-.brand{display:flex;align-items:center;gap:10px;}
-.brand .mark{
-  width:34px;height:34px;border-radius:10px;
-  background:linear-gradient(135deg,var(--amber),#ffcf6b);
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-head);font-weight:800;color:#1a1305;font-size:15px;
-  box-shadow:0 4px 16px var(--amber-glow);
-}
-.brand h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em;}
-.brand .plant-tag{font-size:10.5px;color:var(--ink-faint);font-weight:600;letter-spacing:.1em;display:block;margin-top:1px;}
-.top-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.btn{
-  border:1px solid var(--line);background:var(--surface);color:var(--ink);
-  padding:9px 15px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;
-  transition:transform .15s var(--ease), background .15s, border-color .15s, box-shadow .2s;
-  display:inline-flex;align-items:center;gap:6px;
-}
-.btn:hover{background:var(--surface-2);border-color:var(--ink-faint);transform:translateY(-1px);}
-.btn:active{transform:translateY(0) scale(.97);}
-.btn.primary{background:linear-gradient(135deg,var(--amber),#e8930f);color:#1a1305;border-color:transparent;box-shadow:0 6px 18px var(--amber-glow);}
-.btn.primary:hover{box-shadow:0 8px 22px var(--amber-glow);filter:brightness(1.05);}
-.btn.ghost{background:transparent;}
-.btn.small{padding:6px 11px;font-size:12px;}
-.btn.wide{width:100%;justify-content:center;padding:13px;font-size:14px;}
-.btn[disabled]{opacity:.4;cursor:not-allowed;transform:none;}
-.sync-pill{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--ink-soft);padding:7px 12px;border:1px solid var(--line);border-radius:20px;background:var(--surface);}
-.dot{width:7px;height:7px;border-radius:50%;background:var(--ink-faint);box-shadow:0 0 0 3px transparent;transition:.3s;}
-.dot.on{background:var(--ok);box-shadow:0 0 0 3px rgba(62,207,126,.18);animation:pulse 2.4s ease-in-out infinite;}
-.dot.off{background:var(--danger);}
-@keyframes pulse{0%,100%{box-shadow:0 0 0 3px rgba(62,207,126,.18);}50%{box-shadow:0 0 0 6px rgba(62,207,126,.05);}}
+  /* ---------- controls ---------- */
+  button { cursor:pointer; border:none; border-radius:var(--radius-sm); padding:9px 14px; font-size:13px; font-weight:600; font-family:var(--font);
+           transition: transform .12s var(--ease), filter .15s var(--ease), background .15s var(--ease), border-color .15s var(--ease); }
+  button:active { transform:scale(.97); } button:disabled { opacity:.55; cursor:not-allowed; }
+  .btn-primary { background:linear-gradient(180deg,#6a99f4,var(--accent)); color:#fff; box-shadow:0 2px 10px rgba(91,141,239,.25); }
+  .btn-primary:hover { filter:brightness(1.08); }
+  .btn-ghost { background:transparent; color:var(--muted); border:1px solid var(--border); }
+  .btn-ghost:hover { color:var(--text); border-color:var(--border-hi); background:rgba(127,127,127,.06); }
+  .btn-ghost.on { color:var(--accent); border-color:var(--accent); background:rgba(91,141,239,.10); }
+  .btn-warn.on { color:var(--warn); border-color:var(--warn); background:rgba(234,184,77,.10); }
+  .btn-danger { background:rgba(229,88,110,.12); color:var(--danger); border:1px solid rgba(229,88,110,.3); }
+  .btn-small { padding:6px 10px; font-size:12px; }
+  label { display:block; font-size:11px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.03em; }
+  input, select, textarea { width:100%; background:var(--panel-2); border:1px solid var(--border); color:var(--text); padding:9px 10px;
+          border-radius:var(--radius-sm); font-size:13px; font-family:var(--font); transition:border-color .15s, box-shadow .15s; }
+  input:hover, select:hover, textarea:hover { border-color:var(--border-hi); }
+  input:focus, select:focus, textarea:focus { outline:none; border-color:var(--accent); box-shadow:0 0 0 3px rgba(91,141,239,.18); }
+  input:disabled, select:disabled, textarea:disabled { opacity:.7; cursor:not-allowed; }
+  input[type=number] { -moz-appearance:textfield; } input::-webkit-outer-spin-button, input::-webkit-inner-spin-button { -webkit-appearance:none; margin:0; }
+  .field { margin-bottom:12px; }
 
-/* ---------- Part selector ---------- */
-.selector-row{display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;margin:26px 0 8px;}
-.field{display:flex;flex-direction:column;gap:6px;min-width:180px;}
-.field.grow{flex:1;}
-.label-cap{font-size:10.5px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-faint);font-weight:700;}
-select,input[type=text],input[type=number],input[type=date],textarea{
-  border:1px solid var(--line);background:var(--surface);padding:11px 13px;border-radius:10px;
-  font-size:14px;color:var(--ink);width:100%;transition:border-color .15s,box-shadow .15s,background .15s;
-}
-select:focus,input:focus{border-color:var(--amber);box-shadow:0 0 0 4px rgba(245,165,36,.12);background:var(--surface-2);}
-input::placeholder{color:var(--ink-faint);}
-.part-meta{font-size:12.5px;color:var(--ink-soft);padding:10px 0 2px;}
-.part-meta b{color:var(--ink);}
-.combo{position:relative;}
-.combo-list{
-  position:absolute;top:calc(100% + 8px);left:0;right:0;background:var(--surface-2);
-  border:1px solid var(--line);border-radius:14px;max-height:300px;overflow-y:auto;z-index:30;
-  box-shadow:0 20px 44px rgba(0,0,0,.5);opacity:0;display:none;
-  pointer-events:none;transition:opacity .06s linear;
-}
-.combo-list.open{opacity:1;display:block;pointer-events:auto;}
-.combo-item{padding:12px 14px;cursor:pointer;font-size:13.5px;border-bottom:1px solid var(--line-soft);display:flex;justify-content:space-between;gap:10px;transition:background .1s;}
-.combo-item:last-child{border-bottom:none;}
-.combo-item:hover,.combo-item.active{background:var(--surface-3);}
-.combo-item .code{font-weight:700;}
-.combo-item .desc{color:var(--ink-soft);font-size:12px;text-align:right;}
-.combo-item .batchtag{font-size:9.5px;color:var(--amber);font-weight:700;text-transform:uppercase;background:var(--amber-soft);padding:2px 7px;border-radius:20px;margin-left:8px;}
-.combo-empty{padding:16px;font-size:13px;color:var(--ink-soft);}
-.combo-empty a{color:var(--amber);cursor:pointer;font-weight:700;}
-.hint{font-size:12.5px;color:var(--ink-soft);margin-top:6px;line-height:1.5;}
-.hint.err{color:var(--danger);font-weight:600;}
-.hint.ok{color:var(--ok);font-weight:600;}
+  .card { background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); padding:16px; margin-bottom:16px; box-shadow:var(--shadow-sm); }
 
-.batch-list{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0 4px;}
-.batch-pill{display:inline-flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);background:var(--surface);border:1px solid var(--line);padding:5px 12px;border-radius:20px;cursor:pointer;transition:.15s;}
-.batch-pill:hover{border-color:var(--ink-faint);}
-.batch-pill.active{border-color:var(--amber);color:var(--amber);background:var(--amber-soft);}
+  /* ---------- day bar ---------- */
+  .daybar { display:flex; align-items:center; gap:10px; flex-wrap:wrap; margin-bottom:16px; }
+  .datenav { display:flex; align-items:center; gap:6px; background:var(--panel); border:1px solid var(--border); border-radius:var(--radius-sm); padding:4px; }
+  .datenav button { padding:6px 10px; background:transparent; color:var(--muted); }
+  .datenav button:hover { color:var(--text); background:var(--panel-2); }
+  .datenav input { width:150px; border:none; background:transparent; font-weight:700; padding:6px 4px; text-align:center; }
+  .daybar .spacer { flex:1; }
+  .notice { display:flex; align-items:center; justify-content:space-between; gap:12px; flex-wrap:wrap; padding:12px 14px; margin-bottom:16px;
+            border:1px solid rgba(91,141,239,.35); background:rgba(91,141,239,.08); border-radius:var(--radius-sm); font-size:13px; }
+  .notice b { font-weight:700; }
 
-/* ---------- Pipeline ---------- */
-.pipeline-scroll{padding:26px 0 6px;}
-.pipeline{display:grid;grid-template-columns:repeat(auto-fit,minmax(158px,1fr));gap:14px;}
-.stage-card{
-  background:linear-gradient(160deg,var(--surface),var(--surface-2));
-  border:1px solid var(--line);border-radius:var(--radius-lg);
-  padding:18px;position:relative;overflow:hidden;cursor:pointer;
-  transition:transform .22s var(--ease),border-color .22s,box-shadow .22s;
-  opacity:0;transform:translateY(14px) scale(.98);animation:tileIn .5s var(--ease) forwards;
-}
-.stage-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:var(--line);transition:background .2s;}
-.stage-card::after{content:'';position:absolute;inset:0;background:radial-gradient(120px 80px at 20% 0%, rgba(245,165,36,0),transparent);opacity:0;transition:opacity .3s;}
-.stage-card:hover{transform:translateY(-4px);border-color:var(--amber);box-shadow:0 14px 32px rgba(0,0,0,.4);}
-.stage-card:hover::before{background:var(--amber);}
-.stage-card:hover::after{opacity:1;background:radial-gradient(160px 100px at 20% 0%, var(--amber-glow),transparent 70%);}
-.stage-card.selected{border-color:var(--amber);box-shadow:0 0 0 3px var(--amber-glow), 0 14px 32px rgba(0,0,0,.4);transform:translateY(-4px);}
-.stage-card.selected::before{background:var(--amber);}
-.stage-card.zero{opacity:.45;}
-.stage-card.zero:hover{opacity:.75;}
-@keyframes tileIn{to{opacity:1;transform:translateY(0) scale(1);}}
-.stage-card .stage-name{font-size:12.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--ink-soft);margin:0 0 12px;display:flex;align-items:center;justify-content:space-between;}
-.stage-card .stage-name .tap-hint{font-size:9.5px;color:var(--ink-faint);font-weight:600;opacity:0;transition:opacity .2s;text-transform:none;letter-spacing:0;}
-.stage-card:hover .tap-hint{opacity:1;}
-.stage-card .stage-qty{font-size:34px;font-weight:800;color:var(--ink);line-height:1;font-family:var(--font-head);letter-spacing:-.02em;}
-.stage-card .stage-unit{font-size:11px;color:var(--ink-faint);margin-top:5px;}
-.stage-card.dispatch{border-color:rgba(62,207,126,.35);}
-.stage-card.dispatch::before{background:var(--ok);}
-.stage-card.dispatch:hover::before{background:var(--ok);}
-.stage-card.dispatch .stage-qty{color:var(--ok);}
-.stage-card .stage-sub{margin-top:12px;font-size:11.5px;color:var(--ink-soft);border-top:1px dashed var(--line);padding-top:9px;}
-.stage-card .stage-sub div{display:flex;justify-content:space-between;padding:3px 4px;border-radius:6px;margin:0 -4px;transition:background .12s;}
-.stage-card .stage-sub div:hover{background:var(--surface-3);color:var(--amber);}
-@media (max-width:640px){.pipeline{grid-template-columns:repeat(2,1fr);}}
+  /* ---------- stats ---------- */
+  .stats { display:grid; grid-template-columns:repeat(6,1fr); gap:12px; margin-bottom:8px; }
+  .stat { background:linear-gradient(180deg,var(--panel-3),var(--panel)); border:1px solid var(--border); border-radius:var(--radius); padding:14px 16px; box-shadow:var(--shadow-sm); min-width:0; }
+  .stat .n { font-size:23px; font-weight:800; letter-spacing:-.02em; font-variant-numeric:tabular-nums; }
+  .stat .l { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; margin-top:3px; }
+  .stat .d { font-size:11px; color:var(--muted); margin-top:2px; opacity:.85; }
+  .stat.warn .n { color:var(--warn); } .stat.good .n { color:var(--accent-2); } .stat.bad .n { color:var(--danger); }
+  .stat.clickable { cursor:pointer; } .stat.clickable:hover { border-color:var(--border-hi); }
+  .mini-note { font-size:11px; color:var(--muted); margin:2px 2px 16px; }
 
-/* ---------- Quick entry bar ---------- */
-.entry-card{
-  background:linear-gradient(160deg,var(--surface),var(--surface-2));
-  border:1px solid var(--line);border-radius:var(--radius-lg);
-  padding:22px;margin-top:20px;
-  box-shadow:0 16px 40px rgba(0,0,0,.28);
-  opacity:0;transform:translateY(10px);animation:panelIn .5s var(--ease) forwards;
-}
-.entry-card h2{font-size:16px;margin:0 0 4px;font-weight:700;display:flex;align-items:center;gap:9px;}
-.entry-card .sub{font-size:12.5px;color:var(--ink-soft);margin:0 0 18px;}
-.flow-row{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-bottom:16px;}
-.flow-chip{
-  display:flex;align-items:center;gap:8px;padding:10px 16px;border-radius:12px;
-  background:var(--surface-3);border:1px solid var(--line);font-weight:700;font-size:14px;
-  min-width:140px;cursor:pointer;transition:.18s var(--ease);
-}
-.flow-chip:hover{border-color:var(--amber);}
-.flow-chip.from{color:var(--ink);}
-.flow-chip.to{color:var(--amber);border-color:rgba(245,165,36,.4);background:var(--amber-soft);}
-.flow-arrow{color:var(--ink-faint);font-size:20px;flex:0 0 auto;}
-.chip-quick-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px;}
-.chip-quick{
-  padding:7px 13px;border-radius:20px;font-size:12.5px;font-weight:600;
-  background:var(--surface);border:1px solid var(--line);color:var(--ink-soft);cursor:pointer;
-  transition:.15s;
-}
-.chip-quick:hover{border-color:var(--amber);color:var(--amber);}
-.chip-quick.active{background:var(--amber-soft);border-color:var(--amber);color:var(--amber);}
-.entry-grid{display:grid;grid-template-columns:1fr 1fr auto;gap:12px;align-items:end;margin-top:16px;}
-.entry-grid .field.qty input{font-size:22px;font-weight:800;font-family:var(--font-head);text-align:center;padding:12px;}
-.entry-remarks{margin-top:12px;}
-@media (max-width:680px){.entry-grid{grid-template-columns:1fr;}}
+  /* ---------- stage chips ---------- */
+  .stages { display:flex; gap:8px; overflow-x:auto; scrollbar-width:none; padding:2px 0 12px; margin-bottom:4px; }
+  .stages::-webkit-scrollbar { display:none; }
+  .chip { flex:0 0 auto; display:inline-flex; align-items:center; gap:8px; padding:8px 13px; border-radius:999px; background:var(--panel);
+          border:1px solid var(--border); color:var(--muted); font-size:13px; font-weight:600; white-space:nowrap; }
+  .chip:hover { color:var(--text); border-color:var(--border-hi); }
+  .chip .dot { width:8px; height:8px; border-radius:50%; background:var(--c, var(--muted)); }
+  .chip .ct { font-size:11px; font-weight:800; padding:1px 7px; border-radius:999px; background:var(--panel-3); color:var(--muted); font-variant-numeric:tabular-nums; }
+  .chip.active { color:var(--text); border-color:var(--c, var(--accent)); background:color-mix(in srgb, var(--c, var(--accent)) 14%, var(--panel)); box-shadow:0 0 0 1px var(--c, var(--accent)) inset; }
+  .chip.active .ct { background:var(--c, var(--accent)); color:#fff; }
+  .chip.zero { opacity:.72; }
 
-/* ---------- Panels ---------- */
-.panel{
-  background:linear-gradient(160deg,var(--surface),var(--surface-2));
-  border:1px solid var(--line);border-radius:var(--radius-lg);
-  padding:22px;margin-top:18px;box-shadow:0 12px 30px rgba(0,0,0,.22);
-  opacity:0;transform:translateY(10px);animation:panelIn .5s var(--ease) forwards;
-}
-@keyframes panelIn{to{opacity:1;transform:translateY(0);}}
-.panel:nth-of-type(2){animation-delay:.05s;}
-.panel:nth-of-type(3){animation-delay:.1s;}
-.panel h2{font-size:15.5px;margin:0 0 16px;font-weight:700;letter-spacing:-.005em;display:flex;align-items:center;gap:9px;}
-.panel h2 .idx{
-  display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:7px;
-  background:linear-gradient(135deg,var(--amber),#e8930f);color:#1a1305;font-size:11px;font-weight:800;font-family:var(--font-body);
-}
-.breakdown-title{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:14px;}
-.breakdown-clear{background:none;border:none;color:var(--amber);cursor:pointer;font-size:12.5px;font-weight:700;padding:0;}
+  /* ---------- toolbar ---------- */
+  .toolbar { display:flex; gap:10px; flex-wrap:wrap; align-items:center; margin-bottom:14px; }
+  .toolbar .search { flex:1 1 260px; min-width:200px; max-width:420px; position:relative; }
+  .toolbar .search input { padding-left:32px; }
+  .toolbar .search::before { content:'⌕'; position:absolute; left:11px; top:50%; transform:translateY(-50%); color:var(--muted); font-size:16px; pointer-events:none; }
+  .toolbar .spacer { flex:1; }
+  .count-note { font-size:12px; color:var(--muted); }
 
-.form-actions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;}
+  /* ---------- table ---------- */
+  .table-scroll { overflow-x:auto; border-radius:var(--radius-sm); }
+  table { width:100%; border-collapse:collapse; font-size:12.5px; }
+  th { text-align:left; color:var(--muted); font-weight:600; font-size:10.5px; text-transform:uppercase; letter-spacing:.03em; padding:9px 10px;
+       border-bottom:1px solid var(--border); position:sticky; top:0; background:var(--panel); z-index:2; white-space:nowrap; cursor:pointer; user-select:none; }
+  th small { display:block; font-size:9.5px; font-weight:500; text-transform:none; letter-spacing:0; opacity:.8; }
+  th.num, td.num { text-align:right; font-variant-numeric:tabular-nums; }
+  th.sorted { color:var(--text); } th .arr { font-size:9px; margin-left:3px; }
+  td { padding:9px 10px; border-bottom:1px solid var(--border-soft); white-space:nowrap; vertical-align:middle; }
+  tbody tr { transition:background .12s; cursor:pointer; } tbody tr:hover td { background:var(--panel-2); }
+  td.code { font-weight:700; max-width:280px; overflow:hidden; text-overflow:ellipsis; position:sticky; left:0; background:var(--panel); z-index:1; }
+  tbody tr:hover td.code { background:var(--panel-2); }
+  td.code .note { display:block; font-size:10.5px; font-weight:500; color:var(--muted); }
+  td.wip { font-weight:800; }
+  td.pos { color:var(--accent); } td.wait { color:var(--warn); } td.neg { color:var(--danger); } td.zero { color:var(--muted); font-weight:500; }
+  tfoot td { font-weight:800; border-top:1px solid var(--border); border-bottom:none; background:var(--panel-2); position:sticky; bottom:0; }
+  tr.flagged td.code { box-shadow:inset 3px 0 0 var(--danger); }
+  tr.dirty td { background:rgba(234,184,77,.07); }
+  .qi { width:92px; padding:6px 8px; text-align:right; font-variant-numeric:tabular-nums; }
+  .qs { width:172px; padding:6px 8px; }
 
-/* ---------- Table ---------- */
-.table-wrap{overflow-x:auto;margin-top:4px;max-height:520px;overflow-y:auto;border-radius:10px;border:1px solid var(--line-soft);}
-table{width:100%;border-collapse:collapse;font-size:13px;min-width:640px;}
-thead th{
-  text-align:left;font-weight:700;font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--ink-faint);
-  border-bottom:1px solid var(--line);padding:11px 12px;white-space:nowrap;position:sticky;top:0;
-  background:var(--surface-2);z-index:5;
-}
-tbody td{padding:11px 12px;border-bottom:1px solid var(--line-soft);white-space:nowrap;transition:background .12s;}
-tbody tr:hover{background:var(--surface-3);}
-.tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-weight:700;}
-.tag.in{background:var(--teal-soft);color:var(--teal);}
-.tag.plan{background:var(--amber-soft);color:var(--amber);}
-.row-del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:12px;font-weight:700;opacity:.7;transition:.15s;}
-.row-del:hover{opacity:1;}
-.empty-row td{color:var(--ink-faint);text-align:center;padding:28px;}
-.filters{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
-.filters .field{min-width:150px;}
+  .pill { display:inline-block; font-size:11px; font-weight:700; padding:3px 10px; border-radius:999px; letter-spacing:.01em; white-space:nowrap; }
+  .pill.st { background:color-mix(in srgb, var(--c, var(--muted)) 16%, transparent); color:var(--c, var(--muted)); }
+  :root[data-theme="light"] .pill.st { color:color-mix(in srgb, var(--c, #667085) 80%, #000); }
+  .pill.wait { background:rgba(234,184,77,.15); color:var(--warn); }
+  .pill.proc { background:rgba(91,141,239,.15); color:var(--accent); }
+  .pill.clear { background:rgba(63,208,160,.15); color:var(--accent-2); }
+  .pill.check { background:rgba(229,88,110,.15); color:var(--danger); }
+  .pill.role { background:rgba(91,141,239,.15); color:var(--accent); }
+  .pill.none { background:rgba(139,147,167,.15); color:var(--muted); }
 
-/* ---------- Modal ---------- */
-.modal-backdrop{
-  position:fixed;inset:0;background:rgba(6,7,10,.6);backdrop-filter:blur(4px);display:none;
-  align-items:center;justify-content:center;z-index:50;padding:16px;
-}
-.modal-backdrop.open{display:flex;animation:fadeIn .1s linear;}
-@keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
-.modal{
-  background:var(--surface-2);border-radius:18px;max-width:480px;width:100%;padding:26px;
-  max-height:90vh;overflow:auto;border:1px solid var(--line);
-  box-shadow:0 30px 70px rgba(0,0,0,.5);
-  animation:modalIn .22s var(--ease);
-}
-@keyframes modalIn{from{opacity:0;transform:translateY(10px) scale(.98);}to{opacity:1;transform:translateY(0) scale(1);}}
-.modal h3{margin:0 0 4px;font-size:18px;font-weight:700;}
-.modal p.desc{font-size:13px;color:var(--ink-soft);margin:0 0 18px;line-height:1.5;}
-.modal .field{margin-bottom:13px;}
-.modal-close-row{display:flex;justify-content:flex-end;gap:10px;margin-top:18px;flex-wrap:wrap;}
+  .empty { color:var(--muted); text-align:center; padding:44px 12px; font-size:13px; line-height:1.6; }
+  .empty b { display:block; color:var(--text); font-size:15px; margin-bottom:4px; }
+  .skeleton { height:44px; margin:8px 0; border-radius:8px; background:linear-gradient(90deg,var(--panel-2),var(--panel-3),var(--panel-2)); background-size:200% 100%; animation:sk 1.2s infinite linear; }
+  @keyframes sk { to { background-position:-200% 0; } }
 
-.toast{
-  position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(20px);
-  background:var(--surface-3);color:var(--ink);padding:12px 22px;border-radius:14px;
-  font-size:13.5px;font-weight:600;z-index:60;opacity:0;pointer-events:none;
-  box-shadow:0 12px 34px rgba(0,0,0,.5);border:1px solid var(--line);
-  transition:opacity .25s var(--ease), transform .25s var(--ease);
-  display:flex;align-items:center;gap:8px;
-}
-.toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
-.toast .icon{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:0 0 auto;}
-.toast.err .icon{background:var(--danger);}
+  /* ---------- mobile record cards ---------- */
+  .cards { display:none; }
+  .rc { background:var(--panel-2); border:1px solid var(--border); border-left:4px solid var(--c, var(--border-hi)); border-radius:12px; padding:12px; margin-bottom:10px; cursor:pointer; }
+  .rc:active { background:var(--panel-3); }
+  .rc.flagged { border-color:rgba(229,88,110,.5); }
+  .rc-head { display:flex; justify-content:space-between; align-items:flex-start; gap:8px; }
+  .rc-code { font-weight:800; font-size:14px; line-height:1.3; word-break:break-word; }
+  .rc-note { font-size:11px; color:var(--muted); margin-top:2px; }
+  .rc-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:10px; }
+  .rc-cell { background:var(--panel); border:1px solid var(--border-soft); border-radius:9px; padding:7px 8px; min-width:0; }
+  .rc-cell .k { font-size:9.5px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); }
+  .rc-cell .v { font-size:16px; font-weight:800; font-variant-numeric:tabular-nums; margin-top:1px; }
+  .rc-cell.hl { border-color:var(--border-hi); }
+  .rc-foot { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-top:10px; font-size:11px; color:var(--muted); }
+  .v.pos { color:var(--accent); } .v.wait { color:var(--warn); } .v.neg { color:var(--danger); } .v.zero { color:var(--muted); font-weight:600; }
 
-footer{text-align:center;font-size:11.5px;color:var(--ink-faint);padding:30px 14px 4px;}
+  /* ---------- modal ---------- */
+  .modal-backdrop { position:fixed; inset:0; background:rgba(6,7,11,.72); backdrop-filter:blur(2px); display:none; align-items:center; justify-content:center; z-index:1000; padding:20px; }
+  .modal-backdrop.open { display:flex; animation:fadeIn .18s var(--ease); }
+  .modal { width:min(640px,96vw); max-height:92vh; overflow:auto; background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:22px; box-shadow:0 20px 70px rgba(0,0,0,.5); animation:pop .22s var(--ease); }
+  @keyframes pop { from{opacity:0;transform:translateY(10px) scale(.98)} to{opacity:1;transform:none} }
+  .modal-head { display:flex; align-items:flex-start; justify-content:space-between; gap:12px; margin-bottom:16px; }
+  .modal-head h2 { margin:0; font-size:16px; word-break:break-word; }
+  .modal-actions { display:flex; gap:8px; justify-content:flex-end; margin-top:16px; flex-wrap:wrap; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .calc { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin:4px 0 14px; }
+  .calc .box { border:1px solid var(--border); background:var(--panel-2); border-radius:10px; padding:10px 12px; }
+  .calc .box .k { font-size:10.5px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .calc .box .v { font-size:22px; font-weight:800; margin-top:2px; font-variant-numeric:tabular-nums; }
+  .calc .box .f { font-size:10.5px; color:var(--muted); margin-top:2px; }
+  .calc .box.bad { border-color:rgba(229,88,110,.5); } .calc .box.bad .v { color:var(--danger); }
+  .alert { font-size:12px; color:var(--danger); background:rgba(229,88,110,.08); border:1px solid rgba(229,88,110,.3); border-radius:8px; padding:8px 10px; margin-bottom:12px; display:none; }
+  .alert.show { display:block; }
+  .hist { margin-top:16px; border-top:1px solid var(--border); padding-top:12px; }
+  .hist h3 { font-size:12px; margin:0 0 8px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em; }
+  .hist table { font-size:12px; } .hist td, .hist th { padding:6px 8px; cursor:default; }
+  .status-msg { font-size:12px; margin-top:8px; min-height:16px; } .status-msg.err { color:var(--danger); } .status-msg.ok { color:var(--accent-2); }
+  .link { background:none; padding:0; color:var(--accent); font-size:12px; font-weight:600; text-decoration:underline; text-underline-offset:2px; }
 
-@media (max-width:640px){
-  .brand h1{font-size:17px;}
-  .selector-row{flex-direction:column;align-items:stretch;}
-  .field{min-width:0;}
-  .panel,.entry-card{padding:16px;}
-}
+  /* ---------- dirty bar / fab / toast ---------- */
+  .dirtybar { position:fixed; left:50%; transform:translate(-50%,120%); bottom:18px; z-index:900; display:flex; gap:12px; align-items:center; flex-wrap:wrap; justify-content:center;
+              background:var(--panel); border:1px solid var(--warn); border-radius:14px; padding:10px 14px; box-shadow:var(--shadow-md); transition:transform .25s var(--ease); max-width:96vw; }
+  .dirtybar.show { transform:translate(-50%,0); }
+  .dirtybar b { color:var(--warn); }
+  .fab { position:fixed; right:18px; bottom:18px; width:54px; height:54px; border-radius:50%; padding:0; font-size:26px; display:none; z-index:800; box-shadow:0 8px 24px rgba(91,141,239,.45); }
+  .toast { position:fixed; left:50%; bottom:24px; transform:translate(-50%,40px); opacity:0; background:var(--panel-3); color:var(--text); border:1px solid var(--border-hi);
+           padding:10px 16px; border-radius:10px; font-size:13px; z-index:1200; transition:all .25s var(--ease); pointer-events:none; max-width:92vw; box-shadow:var(--shadow-md); }
+  .toast.show { opacity:1; transform:translate(-50%,0); } .toast.err { border-color:var(--danger); color:var(--danger); } .toast.ok { border-color:var(--accent-2); }
+
+  /* ---------- login ---------- */
+  .login-wrap { min-height:100vh; display:flex; align-items:center; justify-content:center; margin:-20px -24px -80px; padding:20px 24px; position:relative; overflow:hidden; background:#0a0a12;
+    background-image:linear-gradient(rgba(91,141,239,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(91,141,239,.05) 1px,transparent 1px); background-size:42px 42px; }
+  .login-wrap::before { content:''; position:absolute; width:520px; height:520px; border-radius:50%; filter:blur(90px); opacity:.5; background:radial-gradient(circle,#2f5fd0,transparent 70%); top:-160px; left:-140px; }
+  .login-wrap::after { content:''; position:absolute; width:440px; height:440px; border-radius:50%; filter:blur(90px); opacity:.4; background:radial-gradient(circle,#0f8a66,transparent 70%); bottom:-140px; right:-120px; }
+  .login-card { position:relative; z-index:1; background:rgba(16,18,28,.78); backdrop-filter:blur(18px); border:1px solid rgba(139,170,240,.2); border-radius:20px; padding:36px 32px; width:380px; max-width:92vw; box-shadow:0 30px 80px rgba(0,0,0,.55); color:#eef0f4; }
+  .login-card .brand-logo { display:block; margin:0 auto 18px; height:56px; }
+  .login-card h2 { margin:0 0 6px; font-size:21px; text-align:center; letter-spacing:-.02em; }
+  .login-card .sub { text-align:center; margin-bottom:22px; }
+  .login-card input { background:rgba(255,255,255,.04); border-color:rgba(139,170,240,.22); color:#eef0f4; padding:12px 13px; border-radius:10px; }
+  .login-card label { color:#9aa6c4; }
+  .login-card .btn-primary { width:100%; padding:12px 14px; margin-top:4px; }
+  .spinner { display:inline-block; width:14px; height:14px; border-radius:50%; border:2px solid rgba(255,255,255,.35); border-top-color:#fff; animation:spin .7s linear infinite; vertical-align:middle; }
+  .spinner.dark { border-color:rgba(139,147,167,.35); border-top-color:var(--accent); }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  /* ---------- import ---------- */
+  .drop { border:1.5px dashed var(--border-hi); border-radius:12px; padding:22px; text-align:center; color:var(--muted); font-size:13px; }
+  .imp-table td, .imp-table th { cursor:default; padding:7px 8px; }
+  .hide-m { }
+
+  /* ---------- responsive ---------- */
+  @media (max-width:1100px) { .stats { grid-template-columns:repeat(3,1fr); } }
+  @media (max-width:820px) {
+    body { padding:14px 12px 100px; }
+    .brand-logo { height:32px; } h1 { font-size:17px; } .brand .sub { display:none; }
+    .topbar { margin-bottom:12px; } .top-actions { gap:8px; } #role-badge { display:none; }
+    .stats { grid-template-columns:repeat(3,1fr); gap:8px; } .stat { padding:9px 10px; border-radius:11px; } .stat .n { font-size:18px; }
+    .stat .l { font-size:9.5px; letter-spacing:.03em; line-height:1.25; } .stat .d { display:none; } .mini-note { display:none; }
+    .stages { position:sticky; top:0; z-index:50; margin:0 -12px 8px; padding:8px 12px; background:var(--bg); border-bottom:1px solid var(--border-soft); }
+    .chip { padding:9px 13px; }
+    .table-scroll { display:none; } .cards { display:block; }
+    .card { padding:12px; }
+    .toolbar .search { flex:1 1 100%; max-width:none; } .toolbar .spacer { display:none; }
+    .toolbar button { flex:1 1 auto; }
+    .hide-m { display:none !important; }
+    input, select, textarea { font-size:16px; padding:11px 10px; }
+    .daybar { gap:8px; } .datenav { flex:1 1 100%; justify-content:space-between; } .datenav input { flex:1; width:auto; }
+    .daybar > button { flex:1 1 auto; }
+    .fab { display:block; }
+    .modal-backdrop { align-items:flex-end; padding:0; }
+    .modal { width:100vw; max-height:94vh; border-radius:18px 18px 0 0; padding:18px 16px 24px; animation:sheet .25s var(--ease); }
+    @keyframes sheet { from{transform:translateY(40px);opacity:.4} to{transform:none;opacity:1} }
+    .hist td, .hist th { padding:6px 4px; font-size:11px; } .hist th { font-size:9px; }
+    .grid2 { gap:10px; } .modal-actions button { flex:1 1 auto; padding:12px 14px; }
+    .dirtybar { bottom:12px; width:calc(100vw - 24px); } .toast { bottom:80px; }
+  }
+  @media (max-width:380px) { .rc-grid { grid-template-columns:repeat(2,1fr); } }
+  @media (prefers-reduced-motion: reduce) { * { animation:none !important; transition:none !important; } }
 </style>
 </head>
 <body>
 
-<header class="top">
-  <div class="wrap">
+<!-- LOGIN -->
+<div id="login-screen" class="login-wrap" style="display:none;">
+  <div class="login-card">
+    <img src="GREENPACK LATEST LOGO.PNG" alt="Greenpack" class="brand-logo" onerror="this.style.display='none'">
+    <h2>WIP Tracker — MIS</h2>
+    <div class="sub">Sign in with your Greenpack MIS credentials</div>
+    <div class="field"><label for="login-username">Username</label><input id="login-username" placeholder="username" autocomplete="username"></div>
+    <div class="field"><label for="login-password">Password</label><input id="login-password" type="password" placeholder="••••••••" autocomplete="current-password"></div>
+    <button class="btn-primary" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="status-msg err" id="login-status" style="text-align:center"></div>
+  </div>
+</div>
+
+<div id="main-app" style="display:none;">
+  <div class="topbar">
     <div class="brand">
-      <div class="mark">WT</div>
-      <div>
-        <h1>WIP Tracker</h1>
-        <span class="plant-tag">CORRUGATED BOX PLANT</span>
-      </div>
+      <img src="GREENPACK LATEST LOGO.PNG" alt="Greenpack" class="brand-logo" onerror="this.style.display='none'">
+      <div><h1>WIP Tracker</h1><div class="sub">Production work-in-progress · Corrugation to Packaging</div></div>
     </div>
     <div class="top-actions">
-      <button class="btn ghost small" id="btnTheme" title="Toggle light / dark">🌙</button>
-      <span class="sync-pill" id="syncPill"><span class="dot off" id="syncDot"></span><span id="syncLabel">Local only</span></span>
-      <button class="btn ghost small" id="btnSettings">Sheet Sync</button>
-      <button class="btn ghost small" id="btnExport">Export Excel</button>
-      <button class="btn small" id="btnEmailNow">✉ Email Summary</button>
-    </div>
-  </div>
-</header>
-
-<div class="wrap">
-
-  <div class="selector-row">
-    <div class="field grow combo" id="partCombo">
-      <label class="label-cap" for="partSearch">Part / Item Code</label>
-      <input type="text" id="partSearch" autocomplete="off" placeholder="Type to search a part code…">
-      <div class="combo-list" id="partList"></div>
-    </div>
-    <div class="field">
-      <label class="label-cap">&nbsp;</label>
-      <button class="btn small" id="btnPullParts">↻ Refresh</button>
-    </div>
-    <div class="field">
-      <label class="label-cap">&nbsp;</label>
-      <button class="btn primary" id="btnNewPart">+ New Batch</button>
-    </div>
-  </div>
-  <div class="part-meta" id="partMeta"></div>
-  <div class="batch-list" id="batchList"></div>
-
-  <div class="pipeline-scroll">
-    <div class="pipeline" id="pipeline"></div>
-  </div>
-
-  <!-- Quick entry: tap-based -->
-  <div class="entry-card">
-    <h2>⚡ Record Movement</h2>
-    <p class="sub">Tap a stage below as your source, tap where it's going, type the quantity, hit Enter.</p>
-
-    <div class="flow-row">
-      <div class="flow-chip from" id="fromChip">New Production</div>
-      <span class="flow-arrow">→</span>
-      <div class="flow-chip to" id="toChip">Choose destination…</div>
-    </div>
-    <div class="chip-quick-row" id="toQuickRow"></div>
-    <input type="hidden" id="fromStage">
-    <input type="hidden" id="toStageInput">
-
-    <div class="entry-grid">
-      <div class="field">
-        <label class="label-cap">Sub-process (optional)</label>
-        <input type="text" id="processInput" placeholder="e.g. Auto Stitching, Insun">
-        <div class="chip-quick-row" id="subProcessQuickRow" style="display:none;margin-top:6px;"></div>
-      </div>
-      <div class="field">
-        <label class="label-cap">Date</label>
-        <input type="date" id="moveDate">
-      </div>
-      <div class="field qty" style="min-width:140px;">
-        <label class="label-cap" style="text-align:center;">Quantity</label>
-        <input type="number" id="moveQty" min="1" placeholder="0" autocomplete="off">
-      </div>
-    </div>
-    <div class="field entry-remarks">
-      <label class="label-cap">Remarks (optional)</label>
-      <input type="text" id="moveRemarks" placeholder="e.g. shortage, urgent order">
-    </div>
-
-    <div class="hint" id="moveHint">Pick a destination stage to record fresh production, or tap an existing stage above first to move stock forward from there.</div>
-    <div class="form-actions">
-      <button class="btn primary wide" id="btnAddMove" style="flex:1;">Record Movement</button>
-      <button class="btn" id="btnUndo">Undo Last</button>
+      <button type="button" class="theme-toggle" id="theme-btn" aria-label="Toggle theme" title="Toggle theme">☀</button>
+      <span class="pill role" id="role-badge"></span>
+      <div id="conn" class="conn">Connecting…</div>
+      <button class="btn-ghost btn-small" onclick="doLogout()">Log out</button>
     </div>
   </div>
 
-  <div class="panel" id="breakdownPanel" style="display:none;">
-    <div class="breakdown-title">
-      <h2 style="margin:0;"><span class="idx">i</span> <span id="breakdownHeading">Process Breakdown</span></h2>
-      <button class="breakdown-clear" id="btnClearBreakdown">✕ Clear filter</button>
+  <div class="daybar">
+    <div class="datenav">
+      <button type="button" id="d-prev" aria-label="Previous day" title="Previous entry day">‹</button>
+      <input type="date" id="d-input" aria-label="Production date">
+      <button type="button" id="d-next" aria-label="Next day" title="Next entry day">›</button>
     </div>
-    <div class="hint" id="breakdownHint" style="margin-bottom:10px;">Click any stage name or sub-process in the pipeline above to see every part code and quantity sitting there right now, across all batches.</div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Part Code</th><th>Batch Date</th><th>Description</th><th>Qty</th></tr></thead>
-        <tbody id="breakdownBody"></tbody>
-      </table>
-    </div>
-    <div class="hint" id="breakdownTotal" style="margin-top:10px;font-weight:700;color:var(--ink);"></div>
+    <button class="btn-ghost btn-small" id="d-today">Today</button>
+    <button class="btn-ghost btn-small" id="btn-refresh">⟳ Refresh</button>
+    <div class="spacer"></div>
+    <button class="btn-ghost btn-small hide-m" id="btn-import" style="display:none">Import Excel</button>
+    <button class="btn-ghost btn-small" id="btn-csv">Export CSV</button>
   </div>
 
-  <div class="panel">
-    <h2><span class="idx">2</span> Movement Ledger</h2>
-    <div class="filters">
-      <div class="field">
-        <label class="label-cap">Part Code</label>
-        <select id="filterPart"></select>
-      </div>
-      <div class="field">
-        <label class="label-cap">Batch</label>
-        <select id="filterBatch"></select>
-      </div>
-      <div class="field">
-        <label class="label-cap">Stage</label>
-        <select id="filterStage"></select>
-      </div>
-      <div class="field">
-        <label class="label-cap">From Date</label>
-        <input type="date" id="filterFrom">
-      </div>
-      <div class="field">
-        <label class="label-cap">&nbsp;</label>
-        <button class="btn small" id="btnClearFilters">Clear filters</button>
-      </div>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Date</th><th>Part Code</th><th>Batch</th><th>From</th><th>To</th><th>Sub-process</th><th>Qty</th><th>Remarks</th><th></th></tr></thead>
-        <tbody id="ledgerBody"></tbody>
-      </table>
-    </div>
-  </div>
+  <div id="notice"></div>
 
-  <div class="panel">
-    <h2><span class="idx">3</span> Batch Summary — All Open Batches</h2>
-    <div class="table-wrap">
-      <table>
-        <thead><tr><th>Part Code</th><th>Batch Date</th><th>Description</th><th>Current Stage(s) &amp; Qty</th></tr></thead>
-        <tbody id="summaryBody"></tbody>
-      </table>
-    </div>
-  </div>
+  <div class="stats" id="stats"></div>
+  <div class="mini-note" id="stats-note"></div>
 
-  <footer>WIP Tracker · data stored on this device · sync to Google Sheets from the Sheet Sync panel</footer>
-</div>
+  <div class="stages" id="stages" role="tablist" aria-label="Production stage"></div>
 
-<div class="modal-backdrop" id="modalNewPart">
-  <div class="modal">
-    <h3>New batch / production plan</h3>
-    <p class="desc">Enter the part code for a new plan. If this code already has an open batch from a previous day, that batch keeps running separately — this creates a brand-new one dated today (or the date you pick).</p>
-    <div class="field">
-      <label class="label-cap">Part / Item Code</label>
-      <input type="text" id="newPartCode" placeholder="e.g. 61031994" list="knownCodesList">
-      <datalist id="knownCodesList"></datalist>
+  <div class="card">
+    <div class="toolbar">
+      <div class="search"><input id="f-search" type="search" placeholder="Search part code or route note…" autocomplete="off"></div>
+      <button class="btn-ghost btn-small btn-warn" id="btn-flag">⚠ Needs attention <span id="flag-ct"></span></button>
+      <button class="btn-ghost btn-small" id="btn-empty" title="Show part codes that have no quantities on this day">Show empty codes</button>
+      <button class="btn-ghost btn-small hide-m" id="btn-quick" style="display:none" title="Type quantities directly in the table">✎ Quick entry</button>
+      <div class="spacer"></div>
+      <button class="btn-primary btn-small hide-m" id="btn-add" style="display:none">+ Add part code</button>
+      <span class="count-note" id="count-note"></span>
     </div>
-    <div class="field">
-      <label class="label-cap">Description (optional)</label>
-      <input type="text" id="newPartDesc" placeholder="e.g. Four wheeler carton, plate">
-    </div>
-    <div class="field">
-      <label class="label-cap">Batch Date</label>
-      <input type="date" id="newBatchDate">
-    </div>
-    <div class="hint err" id="newPartErr" style="display:none;"></div>
-    <div class="modal-close-row">
-      <button class="btn" id="btnCancelPart">Cancel</button>
-      <button class="btn primary" id="btnSavePart">Create Batch</button>
-    </div>
+    <div class="table-scroll" id="table-wrap"><table id="tbl"></table></div>
+    <div class="cards" id="cards"></div>
+    <div id="more-wrap" style="text-align:center;margin-top:10px"></div>
   </div>
 </div>
 
-<div class="modal-backdrop" id="modalSync">
-  <div class="modal">
-    <h3>Google Sheet Sync</h3>
-    <p class="desc">Paste the Web App URL of the connected Google Apps Script. It's saved on this device, so you shouldn't need to paste it again — Push / Pull will use it automatically from now on.</p>
-    <div class="field">
-      <label class="label-cap">Apps Script Web App URL</label>
-      <input type="text" id="sheetUrl" placeholder="https://script.google.com/macros/s/AKfycbyh96DqwaAVmAZQ9mAIJ2ptajWS3a8Ca52CUYY5ibDkkHnHidVcxklFBIGDLbVDJ1Un2g/exec">
-    </div>
-    <div class="hint" id="syncHint">Not connected.</div>
-    <div class="modal-close-row">
-      <button class="btn" id="btnTestConn">Test Connection</button>
-      <button class="btn" id="btnCloseSync">Close</button>
-      <button class="btn" id="btnPull">Pull from Sheet</button>
-      <button class="btn primary" id="btnPush">Push to Sheet</button>
-    </div>
+<button class="btn-primary fab" id="fab" aria-label="Add part code" style="display:none">+</button>
 
-    <h3 style="margin-top:26px;">Email Summary</h3>
-    <p class="desc">Sends today's WIP batch summary as a table straight to these addresses, via the same Apps Script (it needs the "Send Summary" handler — see the updated apps_script.gs). Saved on this device.</p>
-    <div class="field">
-      <label class="label-cap">Owner Email(s) — comma separated</label>
-      <input type="text" id="emailOwner" placeholder="owner@company.com">
+<div class="dirtybar" id="dirtybar">
+  <span><b id="dirty-ct">0</b> unsaved</span>
+  <button class="btn-primary btn-small" id="dirty-save">Save changes</button>
+  <button class="btn-ghost btn-small" id="dirty-discard">Discard</button>
+</div>
+
+<!-- Edit modal -->
+<div class="modal-backdrop" id="m-edit" aria-hidden="true">
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="m-title">
+    <div class="modal-head"><div><h2 id="m-title">Update WIP</h2><div class="sub" id="m-sub"></div></div><button class="btn-ghost btn-small" data-close="m-edit" aria-label="Close">✕</button></div>
+    <div class="field" id="f-code-wrap"><label for="e-code">Part code</label><input id="e-code" list="parts-list" placeholder="Search or type part code" autocomplete="off"><datalist id="parts-list"></datalist></div>
+    <div class="grid2">
+      <div class="field"><label for="e-corr">Corrugation · available</label><input id="e-corr" type="number" inputmode="numeric" min="0" step="any"></div>
+      <div class="field"><label for="e-print">Printing · done</label><input id="e-print" type="number" inputmode="numeric" min="0" step="any"></div>
+      <div class="field"><label for="e-open">Opening pending</label><input id="e-open" type="number" inputmode="numeric" min="0" step="any"></div>
+      <div class="field"><label for="e-stitch">Stitching / Punching / Gluing done</label><input id="e-stitch" type="number" inputmode="numeric" min="0" step="any"></div>
     </div>
-    <div class="field">
-      <label class="label-cap">Plant Head Email(s) — comma separated</label>
-      <input type="text" id="emailPlantHead" placeholder="plant.head@company.com">
+    <div class="calc">
+      <div class="box" id="c-wp"><div class="k">WIP of Printing</div><div class="v" id="c-wp-v">0</div><div class="f">Corrugation − Printing</div></div>
+      <div class="box" id="c-ws"><div class="k">WIP of Stitch / Glue</div><div class="v" id="c-ws-v">0</div><div class="f">Printing + Opening − Done</div></div>
     </div>
-    <div class="field">
-      <label class="label-cap">CC — comma separated (optional)</label>
-      <input type="text" id="emailCc" placeholder="accounts@company.com, store@company.com">
+    <div class="alert" id="e-alert"></div>
+    <div class="grid2">
+      <div class="field"><label for="e-stage">Route / next stage</label><select id="e-stage"></select></div>
+      <div class="field"><label for="e-note">Route note (optional)</label><input id="e-note" maxlength="80" placeholder="e.g. PUNCH, INSUN, ROTARY"></div>
     </div>
-    <div class="hint" id="emailHint">Not sent yet.</div>
-    <div class="modal-close-row">
-      <button class="btn" id="btnSaveEmail">Save Recipients</button>
-      <button class="btn primary" id="btnSendSummary">Send Summary Now</button>
+    <div class="field"><label for="e-remarks">Remarks (optional)</label><input id="e-remarks" maxlength="300"></div>
+    <div id="e-carry" style="display:none;margin-bottom:6px"><button type="button" class="link" id="btn-carry">Fill from previous day's carry-forward</button> <span class="muted" style="font-size:11px" id="carry-info"></span></div>
+    <div class="status-msg" id="e-status"></div>
+    <div class="modal-actions">
+      <button class="btn-danger btn-small" id="e-delete" style="display:none;margin-right:auto">Delete entry</button>
+      <button class="btn-ghost" data-close="m-edit">Cancel</button>
+      <button class="btn-primary" id="e-save">Save</button>
     </div>
-    <div class="hint" style="margin-top:10px;">To send automatically every day without opening the app, open your Apps Script project → Triggers → add a time-driven trigger on <code>dailyAutoSummary</code>, and fill in the recipients directly inside that function (see comments in the script).</div>
+    <div class="hist" id="e-hist" style="display:none"></div>
   </div>
 </div>
 
-<div class="toast" id="toast"><span class="icon"></span><span id="toastMsg"></span></div>
+<!-- Confirm modal -->
+<div class="modal-backdrop" id="m-confirm" aria-hidden="true" style="z-index:1100">
+  <div class="modal" style="width:min(460px,96vw)" role="alertdialog" aria-modal="true">
+    <div class="modal-head"><h2 id="cf-title">Confirm</h2></div>
+    <div id="cf-msg" style="font-size:13px;line-height:1.55;white-space:pre-line"></div>
+    <div class="modal-actions"><button class="btn-ghost" id="cf-no">Cancel</button><button class="btn-primary" id="cf-yes">Confirm</button></div>
+  </div>
+</div>
+
+<!-- Import modal -->
+<div class="modal-backdrop" id="m-import" aria-hidden="true">
+  <div class="modal" style="width:min(780px,96vw)" role="dialog" aria-modal="true">
+    <div class="modal-head"><div><h2>Import WIP history from Excel</h2><div class="sub">One-time load of your daily WIP_STOCK.xlsx. Each tab named like 25.05.2026 becomes one day. Existing days are overwritten.</div></div><button class="btn-ghost btn-small" data-close="m-import">✕</button></div>
+    <div class="drop"><input type="file" id="imp-file" accept=".xlsx,.xls" style="max-width:340px"><div style="margin-top:8px" id="imp-hint">Choose the Excel file</div></div>
+    <div id="imp-preview" style="margin-top:14px"></div>
+    <div class="status-msg" id="imp-status"></div>
+    <div class="modal-actions"><button class="btn-ghost" data-close="m-import">Close</button><button class="btn-primary" id="imp-go" disabled>Import</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
 
 <script>
-/* =====================================================================
-   WIP TRACKER v3 — streamlined tap-to-record entry, polished UI
-   ===================================================================== */
-const STORAGE_KEY = 'wip_tracker_v2'; // same schema as v2, just a new UI
+/* ============================================================
+   WIP TRACKER — frontend for the Greenpack MIS Apps Script backend
+   Formulas are the same as the daily Excel sheet:
+     WIP of Printing  = Corrugation − Printing
+     WIP of Stitching = Printing + Opening Pending − Stitching/Punching/Gluing
+   ============================================================ */
+const API = 'https://script.google.com/macros/s/AKfycbwShcRNmpa_tV3tGHin81fEnsAqR4uxwYyXcyBklGbCgYxAp4mVgV9GSWmGc-ZRRC3fAA/exec';
+const THEME_KEY = 'svd_theme';
+const $ = id => document.getElementById(id);
+const esc = s => String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 
-// Paste your Apps Script Web App URL here ONCE, then re-upload this file wherever
-// it's hosted. Every device that opens it will then connect automatically —
-// nobody has to type the URL into Sheet Sync again. Leave it as '' if you'd
-// rather each device connect manually via the Sheet Sync panel instead.
-const DEFAULT_SHEET_URL = 'https://script.google.com/macros/s/AKfycbyh96DqwaAVmAZQ9mAIJ2ptajWS3a8Ca52CUYY5ibDkkHnHidVcxklFBIGDLbVDJ1Un2g/exec';
+const STAGES = [
+  { k:'CORRUGATION', label:'Corrugation',          c:'#d9a441', derived:true },
+  { k:'PRINTING',    label:'Printing',             c:'#a78bfa', derived:true },
+  { k:'AUTO',        label:'Auto Stitching',       c:'#5b8def' },
+  { k:'SEMI',        label:'Semi-Auto Stitching',  c:'#2fbf91' },
+  { k:'MANUAL',      label:'Manual Glueing',       c:'#e58a5b' },
+  { k:'REFRAME',     label:'Reframe',              c:'#e5586e' },
+  { k:'PACKAGING',   label:'Packaging',            c:'#41b6d6' },
+  { k:'OTHER',       label:'Other',                c:'#8b93a7' }
+];
+const STAGE_BY = Object.fromEntries(STAGES.map(s => [s.k, s]));
+const ROUTE_OPTIONS = [['', 'Not decided yet'], ['AUTO','Auto Stitching'], ['SEMI','Semi-Auto Stitching'], ['MANUAL','Manual Glueing'], ['REFRAME','Reframe'], ['PACKAGING','Packaging'], ['OTHER','Other']];
+const TRIVIAL_NOTES = ['AUTO STICH','AUTO STITCH','AUTO','SEMI AUTO','SEMI','GLUING','GLUEING','MANUAL','PACKING','PACKAGING','REFRAME'];
 
-const STAGE_SUGGESTIONS = ['Corrugation','Printing','Finishing & Packaging'];
-const FINAL_STAGE = 'Finishing & Packaging'; // last point the supervisor can actually confirm/verify
-const SUBPROCESS_SUGGESTIONS = ['Insun (Stitching/Gluing)','Manual Gluing','Auto Stitching','Semi-Auto Stitching','Packaging'];
+let TOKEN = sessionStorage.getItem('svd_token') || '';
+let SESSION = null; try { SESSION = JSON.parse(sessionStorage.getItem('svd_session') || 'null'); } catch(e) {}
+const S = { rows:[], dates:[], parts:[], date:'', stage:'ALL', q:'', showEmpty:false, flagOnly:false, quick:false, dirty:{}, canWrite:false, canAdmin:false,
+            sort:{k:'wip', d:-1}, limit:150, loaded:false, loading:false, editing:null };
 
-// Cleans up messy/legacy stage names (different casing, old sub-stages, old
-// Dispatch/FG concept) so everything collapses onto the 3 real stages instead
-// of showing duplicate cards like "Corrugation" and "corrugation" side by side.
-function normalizeStageName(name){
-  if(!name) return name;
-  const low = String(name).trim().toLowerCase();
-  if(low.includes('corrugat')) return 'Corrugation';
-  if(low.includes('print')) return 'Printing';
-  if(low.includes('finish') || low.includes('packag') || low.includes('insun') ||
-     low.includes('stitch') || low.includes('glu') || low.includes('dispatch') ||
-     low.includes('despatch') || low === 'fg') return FINAL_STAGE;
-  return String(name).trim(); // unrecognized custom stage (e.g. a typo) — left as typed
+/* ---------- helpers ---------- */
+const nz = v => (v == null || v === '' || isNaN(v)) ? 0 : Number(v);
+const fmt = v => v == null ? '–' : new Intl.NumberFormat('en-IN', {maximumFractionDigits:2}).format(v);
+const calc = r => { const c=nz(r.corr), p=nz(r.print), o=nz(r.open), s=nz(r.stitch); return { wp:c-p, ws:p+o-s }; };
+const isActive = r => !!(nz(r.corr) || nz(r.print) || nz(r.open) || nz(r.stitch) || r.stage);
+function stageOf(r) { if (r.stage) return r.stage; if (nz(r.print) > 0) return 'PRINTING'; if (nz(r.corr) > 0) return 'CORRUGATION'; return 'NONE'; }
+function flagsOf(r) { const {wp,ws} = calc(r), f = [];
+  if (wp < 0) f.push('Printed is ' + fmt(-wp) + ' more than the corrugation balance');
+  if (ws < 0) f.push('Stitched/glued is ' + fmt(-ws) + ' more than printed + opening');
+  return f; }
+function statusOf(r) { if (flagsOf(r).length) return {k:'check', t:'Check qty'}; const {wp,ws} = calc(r);
+  if (ws > 0) return {k:'proc', t:'In process'}; if (wp > 0) return {k:'wait', t:'Awaiting'}; return {k:'clear', t:'Cleared'}; }
+const cls = v => v < 0 ? 'neg' : v === 0 ? 'zero' : '';
+function showNote(r) { const n = (r.note || '').trim(); if (!n) return ''; return TRIVIAL_NOTES.includes(n.toUpperCase()) ? '' : n; }
+function fmtDate(iso, long) { if (!iso) return ''; const [y,m,d] = iso.split('-').map(Number); const dt = new Date(y, m-1, d);
+  return dt.toLocaleDateString('en-GB', long ? {weekday:'short', day:'2-digit', month:'short', year:'numeric'} : {day:'2-digit', month:'short'}); }
+function fmtAt(s) { if (!s) return ''; const d = new Date(s); if (isNaN(d)) return ''; return d.toLocaleString('en-GB', {day:'2-digit', month:'short', hour:'2-digit', minute:'2-digit'}); }
+const todayISO = () => { const d = new Date(); return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0'); };
+function toast(msg, kind) { const t = $('toast'); t.textContent = msg; t.className = 'toast show ' + (kind || ''); clearTimeout(toast._t); toast._t = setTimeout(() => t.className = 'toast', 3200); }
+const isMobile = () => window.matchMedia('(max-width:820px)').matches;
+
+/* ---------- theme ---------- */
+function applyTheme() { let t = 'dark'; try { t = localStorage.getItem(THEME_KEY) || 'dark'; } catch(e) {}
+  document.documentElement.setAttribute('data-theme', t); $('theme-btn').textContent = t === 'dark' ? '☀' : '☾';
+  document.querySelector('meta[name=theme-color]').content = t === 'dark' ? '#0b0d12' : '#f4f6fa'; }
+$('theme-btn').onclick = () => { let t = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'; try { localStorage.setItem(THEME_KEY, t); } catch(e) {} applyTheme(); };
+applyTheme();
+
+/* ---------- API ---------- */
+async function apiPost(body) {
+  body.token = TOKEN;
+  let res; try { res = await fetch(API, { method:'POST', headers:{'Content-Type':'text/plain'}, body:JSON.stringify(body) }); }
+  catch(e) { return { error:'Could not reach the server. Check your internet connection and try again.' }; }
+  try { const j = JSON.parse(await res.text()); if (j.error && /session has expired/i.test(j.error)) expireSession(); return j; }
+  catch(e) { return { error:'The server sent an unexpected response. Make sure the WIP backend add-on is deployed.' }; }
 }
-function normalizeMovements(movements){
-  return (movements||[]).map(m=>({
-    ...m,
-    from: m.from ? normalizeStageName(m.from) : m.from,
-    to: normalizeStageName(m.to)
-  }));
+async function apiGet(params) {
+  const u = API + '?' + new URLSearchParams({ ...params, token: TOKEN });
+  let res; try { res = await fetch(u, { cache:'no-store', redirect:'follow' }); } catch(e) { return { error:'Could not reach the server. Check your internet connection and try again.' }; }
+  try { const j = JSON.parse(await res.text()); if (j.error && /session has expired/i.test(j.error)) expireSession(); return j; }
+  catch(e) { return { error:'The server sent an unexpected response. Make sure the WIP backend add-on is deployed.' }; }
+}
+function expireSession() { sessionStorage.removeItem('svd_token'); sessionStorage.removeItem('svd_session'); TOKEN = ''; SESSION = null; showLogin(); }
+
+/* ---------- auth ---------- */
+function showLogin() { $('main-app').style.display = 'none'; $('login-screen').style.display = 'flex'; setTimeout(() => $('login-username').focus(), 50); }
+async function doLogin() {
+  const u = $('login-username').value.trim(), p = $('login-password').value, st = $('login-status');
+  if (!u || !p) { st.textContent = 'Enter username and password.'; return; }
+  st.textContent = ''; const b = $('login-btn'); b.disabled = true; b.innerHTML = '<span class="spinner"></span> Signing in…';
+  const r = await apiPost({ action:'login', username:u, password:p });
+  b.disabled = false; b.textContent = 'Sign In';
+  if (!r || r.error || !r.token) { st.textContent = (r && r.error) || 'Login failed.'; return; }
+  TOKEN = r.token; SESSION = { username:r.username, role:r.role, unit:r.unit, displayName:r.displayName };
+  sessionStorage.setItem('svd_token', TOKEN); sessionStorage.setItem('svd_session', JSON.stringify(SESSION));
+  startApp();
+}
+function doLogout() { if (hasDirty() && !confirm('You have unsaved changes. Log out anyway?')) return; expireSession(); }
+$('login-password').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
+$('login-username').addEventListener('keydown', e => { if (e.key === 'Enter') $('login-password').focus(); });
+
+/* ---------- load ---------- */
+function setConn(ok, msg) { const c = $('conn'); c.className = 'conn ' + (ok ? 'ok' : 'err'); c.textContent = msg; }
+async function load(silent) {
+  if (S.loading) return; S.loading = true;
+  if (!silent && !S.loaded) renderSkeleton();
+  const r = await apiGet({ mode:'wip', days:14 });
+  S.loading = false;
+  if (!r || r.error || !r.ok) { setConn(false, 'Offline'); if (!S.loaded) renderError((r && r.error) || 'Could not load WIP data.'); else if (!silent) toast((r && r.error) || 'Refresh failed', 'err'); return; }
+  S.rows = r.rows || []; S.dates = r.dates || []; S.parts = r.parts || []; S.canWrite = !!r.canWrite; S.canAdmin = !!r.canAdmin;
+  S.loaded = true; setConn(true, 'Live · ' + (r.user || ''));
+  if (!S.date) { const t = todayISO(); S.date = S.dates.includes(t) ? t : (S.dates[0] || t); }
+  $('btn-quick').style.display = S.canWrite ? '' : 'none'; $('btn-add').style.display = S.canWrite ? '' : 'none';
+  $('btn-import').style.display = S.canAdmin ? '' : 'none'; $('fab').style.display = S.canWrite ? '' : 'none';
+  if (!S.canWrite) { S.quick = false; }
+  $('parts-list').innerHTML = S.parts.map(p => '<option value="' + esc(p) + '">').join('');
+  render();
+}
+function startApp() {
+  $('login-screen').style.display = 'none'; $('main-app').style.display = 'block';
+  $('role-badge').textContent = SESSION ? (SESSION.role || '') : '';
+  load(false);
 }
 
-function loadState(){
-  try{
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if(raw){
-      const parsed = JSON.parse(raw);
-      if(!parsed.sheetUrl && DEFAULT_SHEET_URL) parsed.sheetUrl = DEFAULT_SHEET_URL;
-      parsed.movements = normalizeMovements(parsed.movements);
-      return parsed;
-    }
-    const old = localStorage.getItem('wip_tracker_v1');
-    if(old){
-      const o = JSON.parse(old);
-      const batches = (o.parts||[]).map(p=>({ id:'b_'+p.code+'_legacy', code:p.code, desc:p.desc||'', date:(new Date(p.createdAt||Date.now())).toISOString().slice(0,10), createdAt:p.createdAt||Date.now() }));
-      const movements = normalizeMovements((o.movements||[]).map(m=>({
-        id:m.id, batchId:'b_'+m.partCode+'_legacy', partCode:m.partCode,
-        from: m.from ? (m.from==='fg'?'Dispatch':m.from) : null,
-        to: m.to==='fg' ? 'Dispatch' : m.to,
-        process: m.process||m.fromProcess||null,
-        qty:m.qty, date:m.date, remarks:m.remarks||'', ts:m.ts, dirty:true
-      })));
-      return { batches, movements, sheetUrl:o.sheetUrl || DEFAULT_SHEET_URL || '' };
-    }
-  }catch(e){}
-  return { batches: [], movements: [], sheetUrl: DEFAULT_SHEET_URL || '' };
+/* ---------- data views ---------- */
+const byDate = () => { const m = {}; S.rows.forEach(r => { (m[r.date] = m[r.date] || new Map()).set(r.partCode.toLowerCase(), r); }); return m; };
+function dayRows() {
+  const bd = byDate(); const base = bd[S.date] || new Map(); const out = new Map();
+  base.forEach((r, k) => out.set(k, r));
+  Object.keys(S.dirty).forEach(k => { out.set(k, { ...(out.get(k) || {}), ...S.dirty[k], date:S.date }); });
+  if (S.showEmpty) S.parts.forEach(p => { const k = p.toLowerCase(); if (!out.has(k)) out.set(k, { date:S.date, partCode:p, corr:null, print:null, open:null, stitch:null, stage:'', note:'', virtual:true }); });
+  return [...out.values()];
 }
-function saveState(){
-  try{ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }catch(e){ toast('Could not save locally.', true); }
+function viewRows(ignoreFilters) {
+  let rows = dayRows().filter(r => S.showEmpty || isActive(r));
+  const stageCounts = { ALL: rows.length }; rows.forEach(r => { const s = stageOf(r); stageCounts[s] = (stageCounts[s] || 0) + 1; });
+  if (ignoreFilters) return { rows, stageCounts };
+  if (S.stage !== 'ALL') rows = rows.filter(r => stageOf(r) === S.stage);
+  const q = S.q.trim().toLowerCase();
+  if (q) rows = rows.filter(r => (r.partCode + ' ' + (r.note || '') + ' ' + (r.remarks || '')).toLowerCase().includes(q));
+  const flagTotal = rows.filter(r => flagsOf(r).length).length;
+  if (S.flagOnly) rows = rows.filter(r => flagsOf(r).length);
+  const key = S.sort.k, d = S.sort.d;
+  const val = r => { const c = calc(r); switch (key) {
+      case 'code': return r.partCode.toLowerCase(); case 'stage': return stageOf(r); case 'corr': return nz(r.corr); case 'print': return nz(r.print);
+      case 'wp': return c.wp; case 'open': return nz(r.open); case 'stitch': return nz(r.stitch); case 'ws': return c.ws;
+      default: return Math.max(c.wp, 0) + Math.max(c.ws, 0); } };
+  rows.sort((a, b) => { const x = val(a), y = val(b); return (x < y ? -1 : x > y ? 1 : a.partCode.localeCompare(b.partCode, undefined, {numeric:true})) * (x === y ? 1 : d); });
+  return { rows, stageCounts, flagTotal };
+}
+const hasDirty = () => Object.keys(S.dirty).length > 0;
+
+/* ---------- render ---------- */
+function render() {
+  $('d-input').value = S.date;
+  const { rows, stageCounts, flagTotal } = viewRows();
+  renderNotice(); renderStats(rows); renderStages(stageCounts); renderList(rows);
+  $('flag-ct').textContent = flagTotal ? '(' + flagTotal + ')' : '';
+  $('btn-flag').classList.toggle('on', S.flagOnly); $('btn-empty').classList.toggle('on', S.showEmpty); $('btn-quick').classList.toggle('on', S.quick);
+  $('btn-empty').textContent = S.showEmpty ? 'Hide empty codes' : 'Show empty codes';
+  const d = Object.keys(S.dirty).length; $('dirtybar').classList.toggle('show', d > 0); $('dirty-ct').textContent = d;
+  $('count-note').textContent = rows.length + ' part code' + (rows.length === 1 ? '' : 's') + ' · ' + fmtDate(S.date, true);
+}
+function renderSkeleton() { $('stats').innerHTML = Array(6).fill('<div class="stat"><div class="skeleton" style="height:48px;margin:0"></div></div>').join('');
+  $('tbl').innerHTML = ''; $('cards').innerHTML = Array(5).fill('<div class="skeleton" style="height:110px"></div>').join('');
+  $('tbl').innerHTML = '<tbody>' + Array(7).fill('<tr><td colspan="10"><div class="skeleton"></div></td></tr>').join('') + '</tbody>'; }
+function renderError(msg) { $('stats').innerHTML = ''; $('stages').innerHTML = ''; $('tbl').innerHTML = ''; $('cards').innerHTML = '';
+  $('tbl').innerHTML = '<tbody><tr><td><div class="empty"><b>Could not load WIP data</b>' + esc(msg) + '<br><br><button class="btn-primary btn-small" onclick="load(false)">Try again</button></div></td></tr></tbody>';
+  $('cards').innerHTML = '<div class="empty"><b>Could not load WIP data</b>' + esc(msg) + '<br><br><button class="btn-primary btn-small" onclick="load(false)">Try again</button></div>'; }
+
+function renderNotice() {
+  const el = $('notice'); const hasDay = S.dates.includes(S.date); const prev = prevDateOf(S.date);
+  const dayHasDraft = hasDirty();
+  if (!S.loaded) { el.innerHTML = ''; return; }
+  if (!hasDay && !dayHasDraft) {
+    if (S.canWrite && prev) el.innerHTML = '<div class="notice"><div><b>No WIP entered for ' + esc(fmtDate(S.date, true)) + '.</b> Start the day from ' + esc(fmtDate(prev, true)) + ': remaining WIP of Printing becomes today’s Corrugation balance, and WIP of Stitching becomes Opening pending.</div><button class="btn-primary btn-small" id="btn-startday">Start day from ' + esc(fmtDate(prev)) + '</button></div>';
+    else if (S.canWrite) el.innerHTML = '<div class="notice"><div><b>No WIP data yet.</b> Add part codes with “+ Add part code”' + (S.canAdmin ? ', or import your existing Excel history.' : '.') + '</div>' + (S.canAdmin ? '<button class="btn-primary btn-small" onclick="openImport()">Import Excel</button>' : '') + '</div>';
+    else el.innerHTML = '<div class="notice"><div><b>No WIP entered for ' + esc(fmtDate(S.date, true)) + '.</b></div></div>';
+    const b = $('btn-startday'); if (b) b.onclick = startDay;
+  } else if (dayHasDraft && !hasDay) {
+    el.innerHTML = '<div class="notice"><div><b>Draft for ' + esc(fmtDate(S.date, true)) + '.</b> Carry-forward loaded from ' + esc(fmtDate(prev || '')) + '. Enter today’s quantities, then press Save changes.</div></div>';
+  } else el.innerHTML = '';
+}
+function renderStats(rows) {
+  let corr = 0, print = 0, wp = 0, ws = 0, flags = 0;
+  rows.forEach(r => { const c = calc(r); corr += nz(r.corr); print += nz(r.print); wp += Math.max(c.wp, 0); ws += Math.max(c.ws, 0); if (flagsOf(r).length) flags++; });
+  const scope = S.stage === 'ALL' ? 'all stages' : STAGE_BY[S.stage].label;
+  const cards = [
+    ['n-codes', rows.length, 'Part codes', scope, ''],
+    ['n-corr', fmt(corr), 'Corrugation balance', 'available', ''],
+    ['n-print', fmt(print), 'Printed', 'sent to next stage', ''],
+    ['n-wp', fmt(wp), 'WIP of Printing', 'Corrugation − Printed', wp > 0 ? 'warn' : ''],
+    ['n-ws', fmt(ws), 'WIP of Stitch / Glue', 'Printed + Opening − Done', ws > 0 ? 'warn' : ''],
+    ['n-flag', flags, 'Needs attention', flags ? 'tap to review' : 'all quantities consistent', flags ? 'bad clickable' : 'good']
+  ];
+  $('stats').innerHTML = cards.map(c => '<div class="stat ' + c[4] + '" id="' + c[0] + '"><div class="n">' + c[1] + '</div><div class="l">' + c[2] + '</div><div class="d">' + c[3] + '</div></div>').join('');
+  const f = $('n-flag'); if (f && flags) f.onclick = () => { S.flagOnly = true; S.limit = 150; render(); };
+  $('stats-note').textContent = 'Figures are for the current view (' + scope + '). Each column is totalled separately, so material is never counted twice.';
+}
+function renderStages(counts) {
+  const all = [{ k:'ALL', label:'All stages', c:'var(--accent)' }].concat(STAGES);
+  $('stages').innerHTML = all.map(s => { const n = counts[s.k] || 0;
+    return '<button class="chip' + (S.stage === s.k ? ' active' : '') + (n === 0 && s.k !== 'ALL' ? ' zero' : '') + '" role="tab" aria-selected="' + (S.stage === s.k) + '" data-stage="' + s.k + '" style="--c:' + s.c + '">' +
+      (s.k !== 'ALL' ? '<span class="dot"></span>' : '') + esc(s.label) + '<span class="ct">' + n + '</span></button>'; }).join('');
+}
+function stagePill(r) { const k = stageOf(r); if (k === 'NONE') return '<span class="pill none">Unassigned</span>'; const s = STAGE_BY[k]; return '<span class="pill st" style="--c:' + s.c + '">' + esc(s.label) + '</span>'; }
+function statusPill(r) { const s = statusOf(r); const f = flagsOf(r).join('; '); return '<span class="pill ' + s.k + '"' + (f ? ' title="' + esc(f) + '"' : '') + '>' + s.t + '</span>'; }
+const TH = [['code','Part code',''],['stage','Stage',''],['corr','Corrugation','available'],['print','Printed',''],['wp','WIP of Printing','Corr − Printed'],['open','Opening','pending'],['stitch','Stitch / Glue','done'],['ws','WIP of Stitch','Print + Open − Done']];
+
+function renderList(rows) {
+  const total = rows.length; const shown = rows.slice(0, S.limit);
+  $('more-wrap').innerHTML = total > shown.length ? '<button class="btn-ghost btn-small" id="btn-more">Show more (' + (total - shown.length) + ' remaining)</button>' : '';
+  const empty = '<div class="empty"><b>' + (S.q || S.flagOnly || S.stage !== 'ALL' ? 'No part codes match these filters' : 'No WIP entries for this day') + '</b>' +
+    (S.q || S.flagOnly || S.stage !== 'ALL' ? '<button class="btn-ghost btn-small" onclick="clearFilters()">Clear filters</button>' : (S.dates.includes(S.date) ? 'Everything is at zero. Use “Show empty codes” to see all part codes.' : 'Pick another date or start this day above.')) + '</div>';
+  if (isMobile()) {
+    $('tbl').innerHTML = '';
+    $('cards').innerHTML = shown.length ? shown.map(cardHTML).join('') : empty; return;
+  }
+  $('cards').innerHTML = '';
+  if (!shown.length) { $('tbl').innerHTML = '<tbody><tr><td>' + empty + '</td></tr></tbody>'; return; }
+  const q = S.quick;
+  const head = '<thead><tr>' + TH.map(h => '<th data-sort="' + h[0] + '" class="' + (h[0] !== 'code' && h[0] !== 'stage' ? 'num ' : '') + (S.sort.k === h[0] ? 'sorted' : '') + '">' + h[1] +
+      (S.sort.k === h[0] ? '<span class="arr">' + (S.sort.d > 0 ? '▲' : '▼') + '</span>' : '') + (h[2] ? '<small>' + h[2] + '</small>' : '') + '</th>').join('') +
+      '<th style="cursor:default">Status</th><th style="cursor:default">Updated</th></tr></thead>';
+  let tc = 0, tp = 0, twp = 0, to = 0, ts = 0, tws = 0;
+  const body = shown.map(r => { const c = calc(r); tc += nz(r.corr); tp += nz(r.print); to += nz(r.open); ts += nz(r.stitch); twp += Math.max(c.wp, 0); tws += Math.max(c.ws, 0);
+    return q ? quickRow(r, c) : tableRow(r, c); }).join('');
+  const foot = '<tfoot><tr><td class="code" style="background:var(--panel-2)">Total (' + total + ')</td><td></td><td class="num">' + fmt(tc) + '</td><td class="num">' + fmt(tp) + '</td><td class="num">' + fmt(twp) + '</td><td class="num">' + fmt(to) + '</td><td class="num">' + fmt(ts) + '</td><td class="num">' + fmt(tws) + '</td><td colspan="2"></td></tr></tfoot>';
+  $('tbl').innerHTML = head + '<tbody>' + body + '</tbody>' + foot;
+}
+const qcell = (v, cl) => '<td class="num ' + (cl || '') + '">' + (v == null ? '<span class="muted">–</span>' : fmt(v)) + '</td>';
+function wipClass(v) { return v < 0 ? 'neg wip' : v === 0 ? 'zero wip' : 'wait wip'; }
+function tableRow(r, c) {
+  const fl = flagsOf(r).length; const n = showNote(r); const dirty = S.dirty[r.partCode.toLowerCase()];
+  return '<tr data-code="' + esc(r.partCode) + '" class="' + (fl ? 'flagged ' : '') + (dirty ? 'dirty' : '') + '"><td class="code" title="' + esc(r.partCode) + '">' + esc(r.partCode) + (n ? '<span class="note">' + esc(n) + '</span>' : '') + '</td>' +
+    '<td>' + stagePill(r) + '</td>' + qcell(r.corr, nz(r.corr) === 0 ? 'zero' : '') + qcell(r.print, nz(r.print) === 0 ? 'zero' : '') +
+    '<td class="num ' + wipClass(c.wp) + '">' + fmt(c.wp) + '</td>' + qcell(r.open, nz(r.open) === 0 ? 'zero' : '') + qcell(r.stitch, nz(r.stitch) === 0 ? 'zero' : '') +
+    '<td class="num ' + (c.ws < 0 ? 'neg wip' : c.ws === 0 ? 'zero wip' : 'pos wip') + '">' + fmt(c.ws) + '</td>' +
+    '<td>' + statusPill(r) + '</td><td class="muted" style="font-size:11px">' + (r.by ? esc(r.by) + '<br>' + esc(fmtAt(r.at)) : (dirty ? 'unsaved' : '')) + '</td></tr>';
+}
+function quickRow(r, c) {
+  const dirty = S.dirty[r.partCode.toLowerCase()]; const inp = (f, v) => '<td class="num"><input class="qi" type="number" inputmode="numeric" min="0" step="any" data-f="' + f + '" value="' + (v == null ? '' : v) + '"></td>';
+  const sel = '<td><select class="qs" data-f="stage">' + ROUTE_OPTIONS.map(o => '<option value="' + o[0] + '"' + (o[0] === (r.stage || '') ? ' selected' : '') + '>' + o[1] + '</option>').join('') + '</select></td>';
+  return '<tr data-code="' + esc(r.partCode) + '" class="' + (flagsOf(r).length ? 'flagged ' : '') + (dirty ? 'dirty' : '') + '"><td class="code" title="' + esc(r.partCode) + '">' + esc(r.partCode) + '</td>' + sel + inp('corr', r.corr) + inp('print', r.print) +
+    '<td class="num ' + wipClass(c.wp) + '" data-c="wp">' + fmt(c.wp) + '</td>' + inp('open', r.open) + inp('stitch', r.stitch) +
+    '<td class="num ' + (c.ws < 0 ? 'neg wip' : c.ws === 0 ? 'zero wip' : 'pos wip') + '" data-c="ws">' + fmt(c.ws) + '</td><td data-c="st">' + statusPill(r) + '</td><td class="muted" style="font-size:11px">' + (r.by ? esc(r.by) : '') + '</td></tr>';
+}
+function cardHTML(r) {
+  const c = calc(r), k = stageOf(r), col = k === 'NONE' ? 'var(--border-hi)' : STAGE_BY[k].c, n = showNote(r), fl = flagsOf(r).length;
+  const cell = (label, v, extra, hl) => '<div class="rc-cell' + (hl ? ' hl' : '') + '"><div class="k">' + label + '</div><div class="v ' + (extra || '') + '">' + fmt(v) + '</div></div>';
+  return '<div class="rc' + (fl ? ' flagged' : '') + '" data-code="' + esc(r.partCode) + '" style="--c:' + col + '"><div class="rc-head"><div><div class="rc-code">' + esc(r.partCode) + '</div>' + (n ? '<div class="rc-note">' + esc(n) + '</div>' : '') + '</div>' + stagePill(r) + '</div>' +
+    '<div class="rc-grid">' + cell('Corrugation', nz(r.corr)) + cell('Printed', nz(r.print)) + cell('WIP Print', c.wp, c.wp < 0 ? 'neg' : c.wp === 0 ? 'zero' : 'wait', true) +
+    cell('Opening', nz(r.open)) + cell('Stitch/Glue', nz(r.stitch)) + cell('WIP Stitch', c.ws, c.ws < 0 ? 'neg' : c.ws === 0 ? 'zero' : 'pos', true) + '</div>' +
+    '<div class="rc-foot">' + statusPill(r) + '<span>' + (r.by ? esc(r.by) + ' · ' + esc(fmtAt(r.at)) : (S.dirty[r.partCode.toLowerCase()] ? 'unsaved' : '')) + '</span></div></div>';
 }
 
-let state = loadState();
-saveState(); // persist any stage-name cleanup immediately so it doesn't get re-run every load
-let selectedBatchId = state.batches[0] ? state.batches[0].id : null;
-let lastMovementId = null;
-let pendingFrom = null;   // stage name or null (= new production)
-let pendingTo = null;     // stage name string or null
-
-/* ---------------- Theme ---------------- */
-function applyTheme(t){
-  document.documentElement.setAttribute('data-theme', t);
-  document.getElementById('btnTheme').textContent = t==='light' ? '☀️' : '🌙';
-  try{ localStorage.setItem('wip_theme', t); }catch(e){}
-}
-(function initTheme(){
-  let t = 'dark';
-  try{ t = localStorage.getItem('wip_theme') || 'dark'; }catch(e){}
-  applyTheme(t);
-})();
-document.getElementById('btnTheme').addEventListener('click', ()=>{
-  const cur = document.documentElement.getAttribute('data-theme')==='light' ? 'dark' : 'light';
-  applyTheme(cur);
+/* ---------- events ---------- */
+$('stages').addEventListener('click', e => { const b = e.target.closest('.chip'); if (!b) return; S.stage = b.dataset.stage; S.limit = 150; render(); b.scrollIntoView({inline:'center', block:'nearest', behavior:'smooth'}); });
+let qT; $('f-search').addEventListener('input', e => { clearTimeout(qT); qT = setTimeout(() => { S.q = e.target.value; S.limit = 150; render(); }, 120); });
+function clearFilters() { S.stage = 'ALL'; S.q = ''; S.flagOnly = false; $('f-search').value = ''; render(); }
+$('btn-flag').onclick = () => { S.flagOnly = !S.flagOnly; render(); };
+$('btn-empty').onclick = () => { S.showEmpty = !S.showEmpty; S.limit = 150; render(); };
+$('btn-quick').onclick = () => { S.quick = !S.quick; render(); };
+$('btn-refresh').onclick = async () => { if (hasDirty() && !(await ask('Refresh and keep edits?', 'You have unsaved changes. Refreshing loads the latest saved data; your unsaved edits stay on screen.', 'Refresh'))) return; await load(false); toast('Data refreshed', 'ok'); };
+$('tbl').addEventListener('click', e => {
+  const th = e.target.closest('th[data-sort]'); if (th) { const k = th.dataset.sort; S.sort = S.sort.k === k ? { k, d:-S.sort.d } : { k, d:(k === 'code' || k === 'stage') ? 1 : -1 }; render(); return; }
+  if (e.target.closest('input,select')) return; const tr = e.target.closest('tbody tr[data-code]'); if (tr) openEdit(tr.dataset.code);
 });
+$('cards').addEventListener('click', e => { const c = e.target.closest('.rc'); if (c) openEdit(c.dataset.code); });
+$('more-wrap').addEventListener('click', e => { if (e.target.id === 'btn-more') { S.limit += 200; render(); } });
+$('tbl').addEventListener('input', e => { const el = e.target; if (!el.dataset.f) return; const tr = el.closest('tr'); const code = tr.dataset.code; const key = code.toLowerCase();
+  const cur = dayRows().find(r => r.partCode.toLowerCase() === key) || { partCode:code };
+  const draft = S.dirty[key] || { partCode:code, corr:cur.corr, print:cur.print, open:cur.open, stitch:cur.stitch, stage:cur.stage || '', note:cur.note || '', remarks:cur.remarks || '' };
+  if (el.dataset.f === 'stage') draft.stage = el.value; else draft[el.dataset.f] = el.value === '' ? null : Number(el.value);
+  S.dirty[key] = draft; const c = calc(draft); const set = (n, v, cl) => { const t = tr.querySelector('[data-c="' + n + '"]'); if (t) { t.textContent = fmt(v); t.className = 'num ' + cl; } };
+  set('wp', c.wp, wipClass(c.wp)); set('ws', c.ws, c.ws < 0 ? 'neg wip' : c.ws === 0 ? 'zero wip' : 'pos wip'); const st = tr.querySelector('[data-c="st"]'); if (st) st.innerHTML = statusPill(draft);
+  tr.classList.add('dirty'); tr.classList.toggle('flagged', flagsOf(draft).length > 0);
+  $('dirtybar').classList.add('show'); $('dirty-ct').textContent = Object.keys(S.dirty).length; });
 
-function uid(p){ return (p||'m') + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
-function todayStr(){ return new Date().toISOString().slice(0,10); }
-function isFinalStage(name){ if(!name) return false; return String(name).trim() === FINAL_STAGE; }
-function toast(msg, isErr){
-  const t = document.getElementById('toast');
-  document.getElementById('toastMsg').textContent = msg;
-  t.classList.toggle('err', !!isErr);
-  t.classList.add('show');
-  clearTimeout(t._h); t._h = setTimeout(()=>t.classList.remove('show'), 2800);
+/* date navigation */
+const prevDateOf = d => S.dates.filter(x => x < d).sort().pop() || '';
+const nextDateOf = d => S.dates.filter(x => x > d).sort()[0] || '';
+async function gotoDate(d) { if (!d || d === S.date) return; if (hasDirty() && !(await ask('Discard unsaved changes?', 'You have unsaved changes for ' + fmtDate(S.date, true) + '. Changing the date discards them.', 'Discard and go'))) { render(); return; } S.dirty = {}; S.date = d; S.limit = 150; render(); }
+$('d-input').onchange = e => gotoDate(e.target.value);
+$('d-prev').onclick = () => { const p = prevDateOf(S.date); if (p) gotoDate(p); else toast('No earlier entries', ''); };
+$('d-next').onclick = () => { const n = nextDateOf(S.date); if (n) gotoDate(n); else if (S.date < todayISO()) gotoDate(todayISO()); else toast('No later entries', ''); };
+$('d-today').onclick = () => gotoDate(todayISO());
+function startDay() {
+  const prev = prevDateOf(S.date); if (!prev) return; const base = byDate()[prev] || new Map(); let n = 0;
+  base.forEach(r => { const c = calc(r); if (c.wp > 0 || c.ws > 0) { S.dirty[r.partCode.toLowerCase()] = { partCode:r.partCode, corr:c.wp > 0 ? c.wp : null, print:null, open:c.ws > 0 ? c.ws : null, stitch:null, stage:r.stage || '', note:r.note || '', remarks:'' }; n++; } });
+  if (!n) { toast('Nothing pending on ' + fmtDate(prev) + ' to carry forward', ''); return; }
+  S.quick = !isMobile(); render(); toast(n + ' part codes carried forward. Enter today’s quantities and save.', 'ok');
 }
 
-function batchMovements(id){ return state.movements.filter(m=>m.batchId===id); }
-function batchesForCode(code){ return state.batches.filter(b=>b.code===code).sort((a,b)=>b.date.localeCompare(a.date)); }
+/* save quick entries */
+$('dirty-discard').onclick = () => { S.dirty = {}; render(); };
+$('dirty-save').onclick = async () => {
+  const items = Object.values(S.dirty); if (!items.length) return;
+  const bad = items.filter(r => flagsOf(r).length);
+  if (bad.length && !(await ask('Quantities do not add up', bad.length + ' row(s) have more printed/stitched than available:\n\n' + bad.slice(0, 6).map(r => '• ' + r.partCode + ': ' + flagsOf(r)[0]).join('\n') + (bad.length > 6 ? '\n• …' : '') + '\n\nSave anyway?', 'Save anyway'))) return;
+  const btn = $('dirty-save'); btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Saving…';
+  const r = await apiPost({ action:'wipSave', date:S.date, rows:items });
+  btn.disabled = false; btn.textContent = 'Save changes';
+  if (!r || r.error) { toast((r && r.error) || 'Save failed', 'err'); return; }
+  S.dirty = {}; toast('Saved ' + r.saved + ' entr' + (r.saved === 1 ? 'y' : 'ies'), 'ok'); await load(true);
+};
+window.addEventListener('beforeunload', e => { if (hasDirty()) { e.preventDefault(); e.returnValue = ''; } });
+setInterval(() => { if (TOKEN && !document.hidden && S.loaded && !hasDirty() && !document.querySelector('.modal-backdrop.open')) load(true); }, 60000);
 
-function computeBatchBalances(batchId){
-  const bal = {}; const subBal = {}; const received = {};
-  batchMovements(batchId).sort((a,b)=>a.ts-b.ts).forEach(m=>{
-    if(m.from) bal[m.from] = (bal[m.from]||0) - m.qty;
-    bal[m.to] = (bal[m.to]||0) + m.qty;
-    received[m.to] = (received[m.to]||0) + m.qty;
-    if(m.process){
-      subBal[m.to] = subBal[m.to] || {};
-      subBal[m.to][m.process] = (subBal[m.to][m.process]||0) + m.qty;
-    }
-  });
-  return { bal, subBal, received };
+/* ---------- confirm dialog ---------- */
+function ask(title, msg, okLabel) { return new Promise(res => { $('cf-title').textContent = title; $('cf-msg').textContent = msg; $('cf-yes').textContent = okLabel || 'Confirm';
+  const m = $('m-confirm'); m.classList.add('open'); const done = v => { m.classList.remove('open'); $('cf-yes').onclick = $('cf-no').onclick = null; res(v); };
+  $('cf-yes').onclick = () => done(true); $('cf-no').onclick = () => done(false); $('cf-yes').focus(); }); }
+
+/* ---------- edit modal ---------- */
+document.addEventListener('click', e => { const c = e.target.closest('[data-close]'); if (c) closeModal(c.dataset.close); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') { const o = [...document.querySelectorAll('.modal-backdrop.open')].pop(); if (o && o.id !== 'm-confirm') closeModal(o.id); } });
+document.querySelectorAll('.modal-backdrop').forEach(m => m.addEventListener('mousedown', e => { if (e.target === m && m.id !== 'm-confirm') closeModal(m.id); }));
+function openModal(id) { const m = $(id); m.classList.add('open'); m.setAttribute('aria-hidden', 'false'); }
+function closeModal(id) { const m = $(id); m.classList.remove('open'); m.setAttribute('aria-hidden', 'true'); }
+$('e-stage').innerHTML = ROUTE_OPTIONS.map(o => '<option value="' + o[0] + '">' + o[1] + '</option>').join('');
+
+function openEdit(code) {
+  const isNew = code == null; const key = isNew ? '' : code.toLowerCase();
+  const saved = isNew ? null : (byDate()[S.date] || new Map()).get(key);
+  const cur = isNew ? {} : { ...(saved || { partCode:code }), ...(S.dirty[key] || {}) };
+  S.editing = { isNew, saved: !!saved, key };
+  const ro = !S.canWrite;
+  $('m-title').textContent = isNew ? 'Add part code' : cur.partCode; $('m-sub').textContent = fmtDate(S.date, true) + (ro ? ' · view only' : '');
+  $('e-code').value = cur.partCode || ''; $('e-code').disabled = !isNew || ro;
+  $('f-code-wrap').style.display = isNew ? '' : 'none';
+  ['corr','print','open','stitch'].forEach(f => { $('e-' + f).value = cur[f] == null ? '' : cur[f]; $('e-' + f).disabled = ro; });
+  $('e-stage').value = cur.stage || ''; $('e-note').value = cur.note || ''; $('e-remarks').value = cur.remarks || '';
+  ['e-stage','e-note','e-remarks'].forEach(i => $(i).disabled = ro);
+  $('e-save').style.display = ro ? 'none' : ''; $('e-delete').style.display = (S.canAdmin && saved) ? '' : 'none'; $('e-status').textContent = '';
+  updateCarry(); updatePreview(); renderHist(cur.partCode || ''); openModal('m-edit');
+  setTimeout(() => { if (!ro && !isMobile()) (isNew ? $('e-code') : $('e-corr')).focus(); }, 60);
 }
-function stagesInUse(batchId){ return Object.keys(computeBatchBalances(batchId).bal); }
+function carryFor(code) { const prev = prevDateOf(S.date); if (!prev || !code) return null; const r = (byDate()[prev] || new Map()).get(code.toLowerCase()); if (!r) return null; const c = calc(r); return { prev, wp:Math.max(c.wp, 0), ws:Math.max(c.ws, 0), stage:r.stage || '', note:r.note || '' }; }
+function updateCarry() { const code = $('e-code').value.trim(); const c = (S.canWrite && !S.editing.saved) ? carryFor(code) : null; const box = $('e-carry');
+  if (c && (c.wp || c.ws)) { box.style.display = ''; $('carry-info').textContent = '(' + fmtDate(c.prev) + ': WIP Printing ' + fmt(c.wp) + ', WIP Stitch ' + fmt(c.ws) + ')'; $('btn-carry').onclick = () => { $('e-corr').value = c.wp || ''; $('e-open').value = c.ws || ''; if (!$('e-stage').value) $('e-stage').value = c.stage; if (!$('e-note').value) $('e-note').value = c.note; updatePreview(); }; }
+  else box.style.display = 'none'; }
+function readForm() { const num = id => { const v = $(id).value.trim(); return v === '' ? null : Number(v); };
+  return { partCode:$('e-code').value.trim(), corr:num('e-corr'), print:num('e-print'), open:num('e-open'), stitch:num('e-stitch'), stage:$('e-stage').value, note:$('e-note').value.trim(), remarks:$('e-remarks').value.trim() }; }
+function updatePreview() { const f = readForm(); const c = calc(f); $('c-wp-v').textContent = fmt(c.wp); $('c-ws-v').textContent = fmt(c.ws);
+  $('c-wp').classList.toggle('bad', c.wp < 0); $('c-ws').classList.toggle('bad', c.ws < 0);
+  const fl = flagsOf(f); const a = $('e-alert'); a.textContent = fl.join('. ') + (fl.length ? '. Please double-check the quantities.' : ''); a.classList.toggle('show', fl.length > 0); }
+['e-corr','e-print','e-open','e-stitch'].forEach(i => $(i).addEventListener('input', updatePreview));
+$('e-code').addEventListener('input', () => { updateCarry(); renderHist($('e-code').value.trim()); });
+function renderHist(code) { const box = $('e-hist'); if (!code) { box.style.display = 'none'; return; }
+  const bd = byDate(); const rows = S.dates.filter(d => bd[d] && bd[d].has(code.toLowerCase())).slice(0, 7).map(d => ({ d, r:bd[d].get(code.toLowerCase()) }));
+  if (!rows.length) { box.style.display = 'none'; return; }
+  box.style.display = ''; box.innerHTML = '<h3>Recent days</h3><div class="table-scroll" style="display:block"><table><thead><tr><th>Date</th><th class="num">Corr</th><th class="num">Printed</th><th class="num">WIP P</th><th class="num">Stitch</th><th class="num">WIP S</th></tr></thead><tbody>' +
+    rows.map(x => { const c = calc(x.r); return '<tr><td>' + esc(fmtDate(x.d)) + '</td><td class="num">' + fmt(nz(x.r.corr)) + '</td><td class="num">' + fmt(nz(x.r.print)) + '</td><td class="num">' + fmt(c.wp) + '</td><td class="num">' + fmt(nz(x.r.stitch)) + '</td><td class="num">' + fmt(c.ws) + '</td></tr>'; }).join('') + '</tbody></table></div>'; }
 
-/* =====================================================================
-   RENDER
-   ===================================================================== */
-function sortedBatches(){
-  return state.batches.slice().sort((a,b)=> b.date.localeCompare(a.date) || a.code.localeCompare(b.code,undefined,{numeric:true}));
-}
-function batchLabel(b){ return `${b.code} — ${b.date}`; }
+$('e-save').onclick = async () => {
+  const f = readForm(), st = $('e-status'); st.className = 'status-msg err';
+  if (!f.partCode) { st.textContent = 'Enter a part code.'; return; }
+  for (const k of ['corr','print','open','stitch']) if (f[k] != null && (isNaN(f[k]) || f[k] < 0)) { st.textContent = 'Quantities must be zero or more.'; return; }
+  if (f.corr == null && f.print == null && f.open == null && f.stitch == null && !f.stage) { st.textContent = 'Enter at least one quantity or choose a route.'; return; }
+  if (S.editing.isNew && (byDate()[S.date] || new Map()).has(f.partCode.toLowerCase())) { st.textContent = 'This part code already has an entry on this day. Close and tap it in the list to edit.'; return; }
+  const fl = flagsOf(f); if (fl.length && !(await ask('Quantities do not add up', fl.join('.\n') + '.\n\nSave anyway?', 'Save anyway'))) return;
+  const b = $('e-save'); b.disabled = true; b.innerHTML = '<span class="spinner"></span> Saving…';
+  const r = await apiPost({ action:'wipSave', date:S.date, rows:[f] });
+  b.disabled = false; b.textContent = 'Save';
+  if (!r || r.error) { st.textContent = (r && r.error) || 'Save failed.'; return; }
+  delete S.dirty[f.partCode.toLowerCase()]; closeModal('m-edit'); toast('Saved ' + f.partCode, 'ok'); await load(true);
+};
+$('e-delete').onclick = async () => {
+  const code = S.editing && $('m-title').textContent; if (!code) return;
+  if (!(await ask('Delete this entry?', 'Remove ' + code + ' from ' + fmtDate(S.date, true) + '? This cannot be undone.', 'Delete'))) return;
+  const r = await apiPost({ action:'wipDelete', date:S.date, partCode:code });
+  if (!r || r.error) { $('e-status').className = 'status-msg err'; $('e-status').textContent = (r && r.error) || 'Delete failed.'; return; }
+  closeModal('m-edit'); toast('Entry deleted', 'ok'); await load(true);
+};
+$('btn-add').onclick = () => openEdit(null); $('fab').onclick = () => openEdit(null);
 
-function renderPartSelect(){
-  const filterSel = document.getElementById('filterPart');
-  const prevFilter = filterSel.value;
-  const codes = [...new Set(state.batches.map(b=>b.code))].sort((a,b)=>a.localeCompare(b,undefined,{numeric:true}));
-  filterSel.innerHTML = '<option value="">All part codes</option>' + codes.map(c=>`<option value="${c}">${c}</option>`).join('');
-  filterSel.value = prevFilter;
+/* ---------- CSV ---------- */
+$('btn-csv').onclick = () => { const { rows } = viewRows(); if (!rows.length) { toast('Nothing to export', 'err'); return; }
+  const q = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const lines = [['Date','Part code','Stage','Route note','Corrugation','Printing','WIP of Printing','Opening pending','Stitching/Gluing','WIP of Stitching','Status','Remarks'].map(q).join(',')];
+  rows.forEach(r => { const c = calc(r), k = stageOf(r); lines.push([S.date, r.partCode, k === 'NONE' ? '' : STAGE_BY[k].label, r.note || '', nz(r.corr), nz(r.print), c.wp, nz(r.open), nz(r.stitch), c.ws, statusOf(r).t, r.remarks || ''].map(q).join(',')); });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob(['﻿' + lines.join('\n')], { type:'text/csv' })); a.download = 'WIP_' + S.date + (S.stage !== 'ALL' ? '_' + S.stage : '') + '.csv'; a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 2000); };
 
-  const filterBatchSel = document.getElementById('filterBatch');
-  const prevBatch = filterBatchSel.value;
-  filterBatchSel.innerHTML = '<option value="">All batches</option>' + sortedBatches().map(b=>`<option value="${b.id}">${batchLabel(b)}</option>`).join('');
-  filterBatchSel.value = prevBatch;
-
-  const input = document.getElementById('partSearch');
-  const b = state.batches.find(b=>b.id===selectedBatchId);
-  input.value = b ? batchLabel(b) + (b.desc ? ' — ' + b.desc : '') : '';
-}
-function filterCombo(query){
-  const q=(query||'').trim().toLowerCase();
-  const list = sortedBatches();
-  if(!q) return list;
-  return list.filter(b => b.code.toLowerCase().includes(q) || (b.desc||'').toLowerCase().includes(q) || b.date.includes(q));
-}
-function renderPartCombo(query){
-  const list = document.getElementById('partList');
-  const matches = filterCombo(query);
-  list.innerHTML='';
-  if(state.batches.length===0){
-    list.innerHTML = `<div class="combo-empty">No batches yet. <a id="quickAddLink">Create a new batch</a> to get started.</div>`;
-  } else if(matches.length===0){
-    list.innerHTML = `<div class="combo-empty">No batch matches "${query}". <a id="quickAddLink">Create a new batch?</a></div>`;
-  } else {
-    matches.slice(0,100).forEach(b=>{
-      const isToday = b.date===todayStr();
-      const item = document.createElement('div');
-      item.className='combo-item';
-      item.innerHTML = `<span><span class="code">${b.code}</span>${isToday?'<span class="batchtag">today</span>':`<span class="batchtag" style="background:var(--surface-3);color:var(--ink-soft);">${b.date}</span>`}</span><span class="desc">${b.desc||''}</span>`;
-      item.addEventListener('mousedown', e=>{
-        e.preventDefault();
-        selectedBatchId = b.id;
-        resetEntry();
-        closePartCombo();
-        renderAll();
-      });
-      list.appendChild(item);
+/* ---------- Excel import (one-time history load) ---------- */
+let IMP = null;
+function openImport() { IMP = null; $('imp-file').value = ''; $('imp-preview').innerHTML = ''; $('imp-status').textContent = ''; $('imp-go').disabled = true; $('imp-hint').textContent = 'Choose the Excel file'; openModal('m-import'); }
+$('btn-import').onclick = openImport;
+function loadXLSX() { return new Promise((res, rej) => { if (window.XLSX) return res(); const s = document.createElement('script'); s.src = 'https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js'; s.onload = res; s.onerror = () => rej(new Error('Could not load the Excel reader. Check your connection.')); document.head.appendChild(s); }); }
+function mapStage(raw) { const t = String(raw || '').trim().toUpperCase(); if (!t) return ''; if (t.includes('REFRAME')) return 'REFRAME'; if (t.includes('SEMI')) return 'SEMI'; if (t.includes('AUTO')) return 'AUTO'; if (t.includes('GLU')) return 'MANUAL'; if (t.includes('PACK')) return 'PACKAGING'; return 'OTHER'; }
+function numCell(v) { if (v == null || v === '') return null; const n = Number(v); return isNaN(n) ? null : n; }
+$('imp-file').onchange = async e => {
+  const f = e.target.files[0]; if (!f) return; $('imp-hint').textContent = 'Reading ' + f.name + '…'; const st = $('imp-status'); st.className = 'status-msg'; st.textContent = '';
+  try {
+    await loadXLSX(); const wb = XLSX.read(await f.arrayBuffer(), { type:'array' }); const days = []; const skipped = []; const parts = new Set();
+    wb.SheetNames.forEach(name => {
+      const m = name.trim().match(/^(\d{1,2})[.\-\/](\d{1,2})[.\-\/](\d{4})$/); if (!m) { skipped.push(name); return; }
+      const iso = m[3] + '-' + String(m[2]).padStart(2,'0') + '-' + String(m[1]).padStart(2,'0');
+      const grid = XLSX.utils.sheet_to_json(wb.Sheets[name], { header:1, defval:null, raw:true });
+      let hi = grid.findIndex(r => r && r.some(c => String(c || '').toUpperCase().includes('ITEM CODE'))); if (hi < 0) { skipped.push(name + ' (no ITEM CODE header)'); return; }
+      const H = grid[hi].map(c => String(c || '').toUpperCase().trim()); const col = fn => H.findIndex(fn);
+      const ix = { code:col(h => h.includes('ITEM CODE')), corr:col(h => h === 'CORRUGATION'), print:col(h => h === 'PRINTING'), open:col(h => h.startsWith('OPENING')), stitch:col(h => h.startsWith('STICH') || h.startsWith('STITCH')), stage:col(h => h === 'STAGE') };
+      if (ix.code < 0 || ix.corr < 0 || ix.print < 0 || ix.stitch < 0) { skipped.push(name + ' (columns not recognised)'); return; }
+      const rows = [], seen = new Set(); let dup = 0;
+      grid.slice(hi + 1).forEach(r => { if (!r || r[ix.code] == null || String(r[ix.code]).trim() === '') return; const code = String(r[ix.code]).trim(); parts.add(code);
+        const rec = { partCode:code, corr:numCell(r[ix.corr]), print:numCell(r[ix.print]), open:ix.open >= 0 ? numCell(r[ix.open]) : null, stitch:numCell(r[ix.stitch]) };
+        const raw = ix.stage >= 0 ? String(r[ix.stage] || '').trim() : ''; rec.stage = mapStage(raw); rec.note = raw; rec.remarks = '';
+        if (!(nz(rec.corr) || nz(rec.print) || nz(rec.open) || nz(rec.stitch) || rec.stage)) return;
+        if (seen.has(code.toLowerCase())) { dup++; return; } seen.add(code.toLowerCase()); rows.push(rec); });
+      days.push({ date:iso, name, rows, dup, flags:rows.filter(r => flagsOf(r).length).length });
     });
-  }
-  const quickAdd = document.getElementById('quickAddLink');
-  if(quickAdd) quickAdd.addEventListener('mousedown', e=>{ e.preventDefault(); closePartCombo(); openNewPartModal(query); });
-}
-function openPartCombo(){ renderPartCombo(''); document.getElementById('partList').classList.add('open'); }
-function closePartCombo(){ document.getElementById('partList').classList.remove('open'); }
+    days.sort((a, b) => a.date.localeCompare(b.date)); IMP = { days, parts:[...parts] };
+    $('imp-hint').textContent = f.name;
+    $('imp-preview').innerHTML = days.length ? '<div class="table-scroll" style="display:block"><table class="imp-table"><thead><tr><th>Tab</th><th>Date</th><th class="num">Entries with quantities</th><th class="num">Need attention</th><th>In system?</th></tr></thead><tbody>' +
+      days.map(d => '<tr><td>' + esc(d.name) + '</td><td>' + esc(fmtDate(d.date, true)) + '</td><td class="num">' + d.rows.length + (d.dup ? ' <span class="muted">(' + d.dup + ' duplicate skipped)</span>' : '') + '</td><td class="num">' + d.flags + '</td><td>' + (S.dates.includes(d.date) ? '<span class="pill wait">Will overwrite</span>' : '<span class="pill clear">New</span>') + '</td></tr>').join('') +
+      '</tbody></table></div><div class="mini-note" style="margin-top:8px">' + IMP.parts.length + ' unique part codes will also be added to the part-code list.' + (skipped.length ? ' Skipped tabs: ' + esc(skipped.join(', ')) + '.' : '') + ' Only entered quantities are imported; WIP columns are recalculated.</div>'
+      : '<div class="empty"><b>No daily tabs found</b>Tabs must be named like 25.05.2026.' + (skipped.length ? '<br>Skipped: ' + esc(skipped.join(', ')) : '') + '</div>';
+    $('imp-go').disabled = !days.length; $('imp-go').textContent = days.length ? 'Import ' + days.length + ' day' + (days.length === 1 ? '' : 's') : 'Import';
+  } catch(err) { st.className = 'status-msg err'; st.textContent = err.message || 'Could not read this file.'; $('imp-hint').textContent = 'Choose the Excel file'; }
+};
+$('imp-go').onclick = async () => {
+  if (!IMP) return; const st = $('imp-status'), b = $('imp-go'); b.disabled = true; let done = 0, first = true;
+  for (const d of IMP.days) { st.className = 'status-msg'; st.innerHTML = '<span class="spinner dark"></span> Importing ' + esc(d.name) + ' (' + (done + 1) + ' of ' + IMP.days.length + ')…';
+    const r = await apiPost({ action:'wipImport', date:d.date, rows:d.rows, parts:first ? IMP.parts : [] }); first = false;
+    if (!r || r.error) { st.className = 'status-msg err'; st.textContent = 'Stopped at ' + d.name + ': ' + ((r && r.error) || 'import failed') + '. ' + done + ' day(s) were imported.'; b.disabled = false; await load(true); return; } done++; }
+  st.className = 'status-msg ok'; st.textContent = 'Imported ' + done + ' day(s).'; toast('Imported ' + done + ' day(s) of WIP history', 'ok'); S.date = IMP.days[IMP.days.length - 1].date; await load(true); setTimeout(() => closeModal('m-import'), 700);
+};
 
-function renderBatchList(){
-  const el = document.getElementById('batchList');
-  const b = state.batches.find(b=>b.id===selectedBatchId);
-  el.innerHTML='';
-  if(!b) return;
-  const siblings = batchesForCode(b.code);
-  if(siblings.length<2) return;
-  siblings.forEach(s=>{
-    const pill = document.createElement('span');
-    pill.className='batch-pill'+(s.id===selectedBatchId?' active':'');
-    pill.textContent = s.date + (s.date===todayStr()?' · today':'');
-    pill.addEventListener('click', ()=>{ selectedBatchId=s.id; resetEntry(); renderAll(); });
-    el.appendChild(pill);
-  });
-}
-function renderPartMeta(){
-  const meta = document.getElementById('partMeta');
-  const b = state.batches.find(b=>b.id===selectedBatchId);
-  if(!b){ meta.textContent='Create a batch to begin tracking.'; return; }
-  const moves = batchMovements(b.id).length;
-  meta.innerHTML = `<b>${b.desc||'No description'}</b> &nbsp;·&nbsp; Batch dated <b>${b.date}</b> &nbsp;·&nbsp; ${moves} movement${moves===1?'':'s'} recorded`;
-}
-
-function renderPipeline(){
-  const el = document.getElementById('pipeline');
-  el.innerHTML='';
-  const b = state.batches.find(b=>b.id===selectedBatchId);
-  if(!b){ el.innerHTML = '<div class="hint">Create a batch to see its production progress.</div>'; return; }
-  const { bal, subBal } = computeBatchBalances(b.id);
-  const stages = Object.keys(bal);
-  if(stages.length===0){ el.innerHTML = '<div class="hint">No movements recorded yet for this batch. Use Record Movement below to add the first one.</div>'; return; }
-  const known = STAGE_SUGGESTIONS.filter(s=>stages.includes(s) && !isFinalStage(s));
-  const custom = stages.filter(s=>!STAGE_SUGGESTIONS.includes(s) && !isFinalStage(s));
-  const finalStages = stages.filter(s=>isFinalStage(s));
-  const ordered = [...known, ...custom, ...finalStages];
-  ordered.forEach((stageName,i)=>{
-    const qty = bal[stageName]||0;
-    const card = document.createElement('div');
-    const isFinal = isFinalStage(stageName);
-    card.className = 'stage-card' + (qty===0?' zero':'') + (isFinal?' dispatch':'') + (pendingFrom===stageName?' selected':'');
-    card.style.animationDelay = (i*0.05)+'s';
-    let subHtml='';
-    if(subBal[stageName]){
-      subHtml = '<div class="stage-sub">' + Object.entries(subBal[stageName]).map(([k,v])=>
-        `<div data-stage="${stageName}" data-process="${k}" data-action="breakdown"><span>${k}</span><span>${v}</span></div>`).join('') + '</div>';
-    }
-    const unitLabel = isFinal ? 'ready stock — last point we can verify (what happens after this is outside our tracking)' : 'tap card to move from here';
-    card.innerHTML = `<p class="stage-name" data-stage="${stageName}" data-action="breakdown"><span>${stageName}</span><span class="tap-hint">view breakdown ↗</span></p><div class="stage-qty">${qty}</div><div class="stage-unit">${unitLabel}</div>${subHtml}`;
-    if(qty>0){
-      card.addEventListener('click', (e)=>{
-        if(e.target.closest('[data-action="breakdown"]')) return;
-        pendingFrom = stageName; renderAll(); focusQty();
-      });
-    }
-    el.appendChild(card);
-  });
-  el.querySelectorAll('[data-action="breakdown"].stage-name').forEach(node=>{
-    node.addEventListener('click', (e)=>{ e.stopPropagation(); showBreakdown(node.getAttribute('data-stage'), null); });
-  });
-  el.querySelectorAll('.stage-sub div').forEach(node=>{
-    node.addEventListener('click', (e)=>{ e.stopPropagation(); showBreakdown(node.getAttribute('data-stage'), node.getAttribute('data-process')); });
-  });
-}
-
-function collectAllStageNames(){
-  const set = new Set(STAGE_SUGGESTIONS);
-  state.movements.forEach(m=>{ if(m.from) set.add(m.from); if(m.to) set.add(m.to); });
-  return [...set];
-}
-
-function renderFlowChips(){
-  const fromChip = document.getElementById('fromChip');
-  const toChip = document.getElementById('toChip');
-  fromChip.textContent = pendingFrom ? pendingFrom : 'New Production';
-  fromChip.style.color = pendingFrom ? 'var(--ink)' : 'var(--ink-soft)';
-  toChip.textContent = pendingTo || 'Choose destination…';
-  toChip.classList.toggle('to', true);
-  document.getElementById('fromStage').value = pendingFrom || '';
-  document.getElementById('toStageInput').value = pendingTo || '';
-
-  fromChip.onclick = ()=>{ pendingFrom = null; renderAll(); };
-
-  // quick destination chips: suggestions + any custom stage names already used, excluding current "from"
-  const row = document.getElementById('toQuickRow');
-  const all = collectAllStageNames().filter(s=>s!==pendingFrom);
-  row.innerHTML='';
-  all.forEach(s=>{
-    const chip = document.createElement('span');
-    chip.className='chip-quick'+(pendingTo===s?' active':'');
-    chip.textContent = s;
-    chip.addEventListener('click', ()=>{ pendingTo = s; renderFlowChips(); focusQty(); });
-    row.appendChild(chip);
-  });
-  const customChip = document.createElement('span');
-  customChip.className='chip-quick';
-  customChip.textContent='+ Custom…';
-  customChip.addEventListener('click', ()=>{
-    const val = prompt('New stage name (e.g. Rewinding, QC Hold):');
-    if(val && val.trim()){ pendingTo = val.trim(); renderFlowChips(); focusQty(); }
-  });
-  row.appendChild(customChip);
-
-  // sub-process quick chips only make sense once stock is entering the Finishing & Packaging stage
-  const subRow = document.getElementById('subProcessQuickRow');
-  const processInput = document.getElementById('processInput');
-  if(isFinalStage(pendingTo)){
-    subRow.style.display='';
-    subRow.innerHTML='';
-    SUBPROCESS_SUGGESTIONS.forEach(sp=>{
-      const chip = document.createElement('span');
-      chip.className='chip-quick'+(processInput.value===sp?' active':'');
-      chip.textContent = sp;
-      chip.addEventListener('click', ()=>{ processInput.value = sp; renderFlowChips(); });
-      subRow.appendChild(chip);
-    });
-  } else {
-    subRow.style.display='none';
-    subRow.innerHTML='';
-  }
-
-  updateMoveHint();
-}
-function focusQty(){ setTimeout(()=>document.getElementById('moveQty').focus(), 60); }
-function updateMoveHint(){
-  const hint = document.getElementById('moveHint');
-  const b = state.batches.find(b=>b.id===selectedBatchId);
-  if(!b){ hint.textContent='Create or select a batch first.'; hint.className='hint err'; return; }
-  if(!pendingTo){
-    hint.textContent = pendingFrom
-      ? `Pick a destination stage for stock leaving ${pendingFrom}.`
-      : 'This records fresh production quantity into whichever destination you pick — no deduction anywhere.';
-    hint.className='hint';
-    return;
-  }
-  if(!pendingFrom){
-    hint.innerHTML = `Adds new production straight into <b>${pendingTo}</b>.`;
-    hint.className='hint';
-  } else {
-    const { bal } = computeBatchBalances(b.id);
-    const avail = bal[pendingFrom]||0;
-    hint.innerHTML = `Will deduct from <b>${pendingFrom}</b> (currently <b>${avail}</b>) and add to <b>${pendingTo}</b>.`;
-    hint.className='hint';
-  }
-}
-function resetEntry(){ pendingFrom=null; pendingTo=null; }
-
-function renderLedger(){
-  const body = document.getElementById('ledgerBody');
-  const fPart = document.getElementById('filterPart').value;
-  const fBatch = document.getElementById('filterBatch').value;
-  const fStage = document.getElementById('filterStage').value;
-  const fFrom = document.getElementById('filterFrom').value;
-  let rows = state.movements.slice().sort((a,b)=>b.ts-a.ts);
-  if(fPart) rows = rows.filter(m=>m.partCode===fPart);
-  if(fBatch) rows = rows.filter(m=>m.batchId===fBatch);
-  if(fStage) rows = rows.filter(m=> (m.to===fStage) || (m.from===fStage));
-  if(fFrom) rows = rows.filter(m=>m.date >= fFrom);
-  body.innerHTML='';
-  if(rows.length===0){
-    body.innerHTML = '<tr class="empty-row"><td colspan="9">No movements match these filters yet.</td></tr>';
-    return;
-  }
-  const batchById = {}; state.batches.forEach(b=>batchById[b.id]=b);
-  rows.slice(0,400).forEach(m=>{
-    const b = batchById[m.batchId];
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td>${m.date}</td>
-      <td>${m.partCode}</td>
-      <td>${b?b.date:'—'}</td>
-      <td>${m.from ? `<span class="tag in">${m.from}</span>` : `<span class="tag plan">New</span>`}</td>
-      <td>${m.to}</td>
-      <td>${m.process||'—'}</td>
-      <td>${m.qty}</td>
-      <td>${m.remarks||''}</td>
-      <td><button class="row-del" data-id="${m.id}">Delete</button></td>`;
-    body.appendChild(tr);
-  });
-}
-function renderStageFilterOptions(){
-  const sel = document.getElementById('filterStage');
-  const prev = sel.value;
-  sel.innerHTML = '<option value="">All stages</option>' + collectAllStageNames().map(s=>`<option value="${s}">${s}</option>`).join('');
-  sel.value = prev;
-}
-function renderSummary(){
-  const body = document.getElementById('summaryBody');
-  body.innerHTML='';
-  if(state.batches.length===0){
-    body.innerHTML = '<tr class="empty-row"><td colspan="4">No batches yet.</td></tr>';
-    return;
-  }
-  sortedBatches().forEach(b=>{
-    const { bal } = computeBatchBalances(b.id);
-    const stageStr = Object.entries(bal).filter(([k])=>bal[k]!==0)
-      .map(([k,v])=>`${k}: ${v}`).join(', ') || '—';
-    const tr = document.createElement('tr');
-    tr.innerHTML = `<td><b>${b.code}</b></td><td>${b.date}</td><td>${b.desc||''}</td><td>${stageStr}</td>`;
-    body.appendChild(tr);
-  });
-}
-function renderSyncStatus(){
-  const dot = document.getElementById('syncDot');
-  const label = document.getElementById('syncLabel');
-  if(state.sheetUrl){ dot.className='dot on'; label.textContent='Sheet connected'; }
-  else { dot.className='dot off'; label.textContent='Local only'; }
-  document.getElementById('sheetUrl').value = state.sheetUrl || '';
-  document.getElementById('syncHint').textContent = state.sheetUrl ? 'Connected — saved on this device, no need to paste again.' : 'Not connected.';
-  document.getElementById('emailOwner').value = (state.emailConfig && state.emailConfig.owner) || '';
-  document.getElementById('emailPlantHead').value = (state.emailConfig && state.emailConfig.plantHead) || '';
-  document.getElementById('emailCc').value = (state.emailConfig && state.emailConfig.cc) || '';
-}
-function renderAll(){
-  renderPartSelect(); renderBatchList(); renderPartMeta(); renderPipeline();
-  renderFlowChips(); renderStageFilterOptions();
-  renderLedger(); renderSummary(); renderSyncStatus();
-}
-
-function showBreakdown(stageName, processName){
-  const panel = document.getElementById('breakdownPanel');
-  const body = document.getElementById('breakdownBody');
-  const heading = document.getElementById('breakdownHeading');
-  const totalEl = document.getElementById('breakdownTotal');
-  panel.style.display = '';
-  heading.textContent = processName ? `${stageName} — ${processName}` : stageName;
-
-  const rows = [];
-  state.batches.forEach(b=>{
-    const { bal, subBal } = computeBatchBalances(b.id);
-    let qty;
-    if(processName){ qty = (subBal[stageName] && subBal[stageName][processName]) || 0; }
-    else { qty = bal[stageName] || 0; }
-    if(qty !== 0) rows.push({ code:b.code, date:b.date, desc:b.desc||'', qty });
-  });
-  rows.sort((a,b)=> b.qty - a.qty || a.code.localeCompare(b.code, undefined, {numeric:true}));
-
-  body.innerHTML='';
-  if(rows.length===0){
-    body.innerHTML = '<tr class="empty-row"><td colspan="4">Nothing currently sitting here.</td></tr>';
-  } else {
-    rows.forEach(r=>{
-      const tr = document.createElement('tr');
-      tr.innerHTML = `<td><b>${r.code}</b></td><td>${r.date}</td><td>${r.desc}</td><td>${r.qty}</td>`;
-      body.appendChild(tr);
-    });
-  }
-  const total = rows.reduce((s,r)=>s+r.qty,0);
-  totalEl.textContent = rows.length ? `Total across all batches: ${total}` : '';
-  panel.scrollIntoView({ behavior:'smooth', block:'nearest' });
-}
-document.getElementById('btnClearBreakdown').addEventListener('click', ()=>{ document.getElementById('breakdownPanel').style.display='none'; });
-
-/* =====================================================================
-   EVENTS
-   ===================================================================== */
-const partSearchInput = document.getElementById('partSearch');
-partSearchInput.addEventListener('focus', ()=>{ openPartCombo(); partSearchInput.select(); });
-partSearchInput.addEventListener('input', e=>renderPartCombo(e.target.value));
-partSearchInput.addEventListener('keydown', e=>{
-  if(e.key==='Escape'){ closePartCombo(); partSearchInput.blur(); }
-  if(e.key==='Enter'){
-    const matches = filterCombo(partSearchInput.value);
-    if(matches.length===1){ selectedBatchId = matches[0].id; resetEntry(); closePartCombo(); renderAll(); partSearchInput.blur(); }
-  }
-});
-partSearchInput.addEventListener('blur', ()=>{ setTimeout(()=>{ closePartCombo(); renderPartSelect(); }, 40); });
-document.addEventListener('click', e=>{ if(!document.getElementById('partCombo').contains(e.target)) closePartCombo(); });
-
-function openNewPartModal(prefillCode){
-  document.getElementById('newPartCode').value = prefillCode || '';
-  document.getElementById('newPartDesc').value='';
-  document.getElementById('newBatchDate').value = todayStr();
-  document.getElementById('newPartErr').style.display='none';
-  const dl = document.getElementById('knownCodesList');
-  dl.innerHTML = (state.knownPartCodes||[]).map(p=>`<option value="${(p.code||p).toString()}">${p.desc?p.desc:''}</option>`).join('');
-  document.getElementById('modalNewPart').classList.add('open');
-  setTimeout(()=>document.getElementById('newPartCode').focus(), 80);
-}
-document.getElementById('btnNewPart').addEventListener('click', ()=>openNewPartModal(''));
-document.getElementById('newPartCode').addEventListener('input', (e)=>{
-  const match = (state.knownPartCodes||[]).find(p=>(p.code||p).toString()===e.target.value.trim());
-  if(match && match.desc && !document.getElementById('newPartDesc').value){
-    document.getElementById('newPartDesc').value = match.desc;
-  }
-});
-document.getElementById('btnPullParts').addEventListener('click', ()=>pullFromSheet(true));
-document.getElementById('btnCancelPart').addEventListener('click', ()=>document.getElementById('modalNewPart').classList.remove('open'));
-document.getElementById('btnSavePart').addEventListener('click', ()=>{
-  const code = document.getElementById('newPartCode').value.trim();
-  const desc = document.getElementById('newPartDesc').value.trim();
-  const date = document.getElementById('newBatchDate').value || todayStr();
-  const err = document.getElementById('newPartErr');
-  if(!code){ err.textContent='Enter a part code.'; err.style.display='block'; return; }
-  if(state.batches.some(b=>b.code===code && b.date===date)){
-    err.textContent='A batch for this part code already exists on this date — select it from the list instead.';
-    err.style.display='block'; return;
-  }
-  const b = { id: uid('b'), code, desc, date, createdAt: Date.now() };
-  state.batches.push(b);
-  saveState(); selectedBatchId = b.id; resetEntry();
-  document.getElementById('modalNewPart').classList.remove('open');
-  renderAll();
-  toast('New batch created: ' + code + ' (' + date + ')');
-});
-document.getElementById('newPartCode').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('btnSavePart').click(); });
-
-document.getElementById('moveQty').addEventListener('keydown', e=>{ if(e.key==='Enter') document.getElementById('btnAddMove').click(); });
-
-document.getElementById('btnAddMove').addEventListener('click', ()=>{
-  const hint = document.getElementById('moveHint');
-  const b = state.batches.find(b=>b.id===selectedBatchId);
-  if(!b){ hint.textContent='Create or select a batch first.'; hint.className='hint err'; return; }
-  const fromKey = pendingFrom || null;
-  const toKey = (pendingTo||'').trim();
-  const process = document.getElementById('processInput').value.trim() || null;
-  const qty = parseFloat(document.getElementById('moveQty').value);
-  const date = document.getElementById('moveDate').value || todayStr();
-  const remarks = document.getElementById('moveRemarks').value.trim();
-
-  if(!toKey){ hint.textContent='Tap a destination stage above (or "+ Custom…").'; hint.className='hint err'; return; }
-  if(!qty || qty<=0){ hint.textContent='Enter a quantity greater than zero.'; hint.className='hint err'; return; }
-  if(fromKey){
-    const { bal } = computeBatchBalances(b.id);
-    const avail = bal[fromKey]||0;
-    if(qty > avail){
-      hint.innerHTML = `Only <b>${avail}</b> available at <b>${fromKey}</b> in this batch. Reduce the quantity or record production there first.`;
-      hint.className='hint err'; return;
-    }
-  }
-  const m = { id: uid('m'), batchId:b.id, partCode:b.code, from:fromKey, to:toKey, process, qty, date, remarks, ts:Date.now(), dirty:true };
-  state.movements.push(m);
-  lastMovementId = m.id;
-  saveState();
-  document.getElementById('moveQty').value='';
-  document.getElementById('moveRemarks').value='';
-  document.getElementById('processInput').value='';
-  // keep "to" as the new "from" so consecutive forward moves are one tap+type each
-  pendingFrom = toKey; pendingTo = null;
-  renderAll();
-  toast('Movement recorded — ' + qty + ' → ' + toKey);
-});
-
-document.getElementById('btnUndo').addEventListener('click', ()=>{
-  if(!lastMovementId){ toast('Nothing to undo.', true); return; }
-  state.movements = state.movements.filter(m=>m.id!==lastMovementId);
-  saveState(); lastMovementId=null;
-  renderAll();
-  toast('Last movement removed.');
-});
-
-document.getElementById('ledgerBody').addEventListener('click', e=>{
-  if(e.target.classList.contains('row-del')){
-    const id = e.target.getAttribute('data-id');
-    if(confirm('Delete this movement? This will change WIP balances.')){
-      state.movements = state.movements.filter(m=>m.id!==id);
-      saveState();
-      renderAll();
-    }
-  }
-});
-['filterPart','filterBatch','filterStage','filterFrom'].forEach(id=>{
-  document.getElementById(id).addEventListener('change', renderLedger);
-});
-document.getElementById('btnClearFilters').addEventListener('click', ()=>{
-  document.getElementById('filterPart').value='';
-  document.getElementById('filterBatch').value='';
-  document.getElementById('filterStage').value='';
-  document.getElementById('filterFrom').value='';
-  renderLedger();
-});
-
-/* ---------------- Export to Excel ---------------- */
-document.getElementById('btnExport').addEventListener('click', ()=>{
-  const wb = XLSX.utils.book_new();
-  const allStages = collectAllStageNames();
-
-  const head = ['ITEM CODE','BATCH DATE', ...allStages, 'DESCRIPTION'];
-  const rows = sortedBatches().map(b=>{
-    const { bal } = computeBatchBalances(b.id);
-    return [b.code, b.date, ...allStages.map(s=>bal[s]||0), b.desc||''];
-  });
-  const ws1 = XLSX.utils.aoa_to_sheet([[`WIP BATCH SUMMARY — ${todayStr()}`],[],head, ...rows]);
-  XLSX.utils.book_append_sheet(wb, ws1, 'Batch Summary');
-
-  const ledgerHead = ['Date','Part Code','Batch Date','From Stage','To Stage','Sub-process','Qty','Remarks'];
-  const batchById = {}; state.batches.forEach(b=>batchById[b.id]=b);
-  const ledgerRows = state.movements.slice().sort((a,b)=>a.ts-b.ts)
-    .map(m=>[m.date, m.partCode, (batchById[m.batchId]||{}).date||'', m.from||'', m.to, m.process||'', m.qty, m.remarks||'']);
-  const ws2 = XLSX.utils.aoa_to_sheet([ledgerHead, ...ledgerRows]);
-  XLSX.utils.book_append_sheet(wb, ws2, 'Movement Ledger');
-
-  const ws3 = XLSX.utils.aoa_to_sheet([['Part Code','Batch Date','Description'], ...state.batches.map(b=>[b.code,b.date,b.desc||''])]);
-  XLSX.utils.book_append_sheet(wb, ws3, 'Batches');
-
-  XLSX.writeFile(wb, `WIP_STOCK_${todayStr()}.xlsx`);
-  toast('Excel file downloaded.');
-});
-
-/* ---------------- Google Sheet sync ---------------- */
-document.getElementById('btnSettings').addEventListener('click', ()=>document.getElementById('modalSync').classList.add('open'));
-document.getElementById('btnCloseSync').addEventListener('click', ()=>document.getElementById('modalSync').classList.remove('open'));
-function currentSheetUrl(){ return document.getElementById('sheetUrl').value.trim(); }
-document.getElementById('sheetUrl').addEventListener('change', ()=>{
-  state.sheetUrl = currentSheetUrl(); saveState(); renderSyncStatus();
-});
-
-document.getElementById('btnPush').addEventListener('click', async ()=>{
-  const url = currentSheetUrl();
-  if(!url){ toast('Paste your Web App URL first.', true); return; }
-  state.sheetUrl = url; saveState();
-  const btn = document.getElementById('btnPush'); btn.disabled = true; btn.textContent='Pushing…';
-  try{
-    const payload = { action:'push', batches: state.batches, movements: state.movements };
-    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
-    const data = await res.json();
-    if(data.ok){
-      state.movements.forEach(m=>delete m.dirty);
-      saveState();
-      document.getElementById('syncHint').textContent = `Pushed successfully — ${data.addedMovements||0} new movement(s), ${data.addedBatches||0} new batch(es) added to the sheet.`;
-      toast('Pushed to Google Sheet.');
-    } else { throw new Error(data.error || 'Unknown error'); }
-  }catch(err){
-    document.getElementById('syncHint').textContent = 'Push failed: ' + err.message + '. Check the URL and that the script is deployed for "Anyone".';
-    toast('Push failed — see Sheet Sync panel.', true);
-  }
-  btn.disabled=false; btn.textContent='Push to Sheet';
-  renderSyncStatus();
-});
-
-// For every code in the Parts master list, creates today's batch automatically
-// if one doesn't already exist for that code+date. Returns how many were created.
-function autoCreateTodaysBatches(){
-  const today = todayStr();
-  const existingKeys = new Set(state.batches.map(b=>b.code+'|'+b.date));
-  let created = 0;
-  (state.knownPartCodes||[]).forEach(p=>{
-    const code = (p.code||p).toString().trim();
-    if(!code) return;
-    const key = code+'|'+today;
-    if(existingKeys.has(key)) return;
-    const b = { id: uid('b'), code, desc: p.desc||'', date: today, createdAt: Date.now() };
-    state.batches.push(b);
-    existingKeys.add(key);
-    created++;
-  });
-  return created;
-}
-
-async function pullFromSheet(fromQuickButton){
-  const url = fromQuickButton ? state.sheetUrl : currentSheetUrl();
-  if(!url){ toast('Connect a Google Sheet first (Sheet Sync, top right).', true); if(fromQuickButton) document.getElementById('modalSync').classList.add('open'); return; }
-  state.sheetUrl = url; saveState();
-  const btn = fromQuickButton ? document.getElementById('btnPullParts') : document.getElementById('btnPull');
-  const original = btn.textContent;
-  btn.disabled = true; btn.textContent = fromQuickButton ? 'Refreshing…' : 'Pulling…';
-  try{
-    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'action=pull');
-    const data = await res.json();
-    if(data.ok){
-      const knownIds = new Set(state.movements.map(m=>m.id));
-      const knownBatches = new Set(state.batches.map(b=>b.id));
-      let newBatches = 0;
-      normalizeMovements(data.movements||[]).forEach(m=>{ if(!knownIds.has(m.id)){ state.movements.push(m); knownIds.add(m.id); } });
-      (data.batches||[]).forEach(b=>{ if(!knownBatches.has(b.id)){ state.batches.push(b); knownBatches.add(b.id); newBatches++; } });
-      if(Array.isArray(data.partCodes)) state.knownPartCodes = data.partCodes;
-      const autoCreated = autoCreateTodaysBatches();
-      saveState(); renderAll();
-      document.getElementById('syncHint').textContent = 'Pulled latest data from the sheet.';
-      const totalNew = newBatches + autoCreated;
-      toast(fromQuickButton
-        ? `Refreshed — ${totalNew} new batch(es)${autoCreated?` (${autoCreated} auto-created from Parts list)`:''}.`
-        : 'Pulled from Google Sheet.');
-      // push the freshly auto-created batches back to the sheet so they persist
-      if(autoCreated>0){
-        try{
-          await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify({ action:'push', batches: state.batches, movements: [] }) });
-        }catch(e){ /* silent — will sync on next manual push if this fails */ }
-      }
-    } else { throw new Error(data.error || 'Unknown error'); }
-  }catch(err){
-    document.getElementById('syncHint').textContent = 'Pull failed: ' + err.message;
-    toast('Pull failed — see Sheet Sync panel.', true);
-  }
-  btn.disabled=false; btn.textContent=original;
-  renderSyncStatus();
-}
-document.getElementById('btnTestConn').addEventListener('click', async ()=>{
-  const url = currentSheetUrl();
-  const hint = document.getElementById('syncHint');
-  if(!url){ hint.textContent = 'Paste a Web App URL first.'; return; }
-  hint.textContent = 'Testing…';
-  try{
-    const res = await fetch(url + (url.includes('?') ? '&' : '?') + 'action=ping');
-    const data = await res.json();
-    hint.textContent = data.ok ? '✓ Connected — script responded correctly. You can Pull or Push now.' : ('Reached the URL, but it replied with an error: ' + (data.error||'unknown'));
-  }catch(err){
-    hint.textContent = 'Could not reach that URL: ' + err.message + '. Check it ends in /exec and the deployment access is set to "Anyone".';
-  }
-});
-document.getElementById('btnPull').addEventListener('click', ()=>pullFromSheet(false));
-
-/* ---------------- Email summary ---------------- */
-function parseEmailList(str){
-  return (str||'').split(',').map(s=>s.trim()).filter(Boolean);
-}
-document.getElementById('btnSaveEmail').addEventListener('click', ()=>{
-  state.emailConfig = {
-    owner: document.getElementById('emailOwner').value.trim(),
-    plantHead: document.getElementById('emailPlantHead').value.trim(),
-    cc: document.getElementById('emailCc').value.trim()
-  };
-  saveState();
-  document.getElementById('emailHint').textContent = 'Recipients saved on this device.';
-  toast('Email recipients saved.');
-});
-async function sendSummaryEmail(){
-  const hint = document.getElementById('emailHint');
-  const url = state.sheetUrl || currentSheetUrl();
-  if(!url){ toast('Connect a Google Sheet / Apps Script first.', true); document.getElementById('modalSync').classList.add('open'); return; }
-  const to = [...parseEmailList(document.getElementById('emailOwner').value), ...parseEmailList(document.getElementById('emailPlantHead').value)];
-  const cc = parseEmailList(document.getElementById('emailCc').value);
-  if(to.length===0){ toast('Add at least one owner or plant head email first.', true); document.getElementById('modalSync').classList.add('open'); return; }
-  state.emailConfig = { owner: document.getElementById('emailOwner').value.trim(), plantHead: document.getElementById('emailPlantHead').value.trim(), cc: document.getElementById('emailCc').value.trim() };
-  saveState();
-
-  const summaryRows = sortedBatches().map(b=>{
-    const { bal } = computeBatchBalances(b.id);
-    const stageStr = Object.entries(bal).filter(([k])=>bal[k]!==0).map(([k,v])=>`${k}: ${v}`).join(', ') || '—';
-    return { code:b.code, date:b.date, desc:b.desc||'', stages:stageStr };
-  });
-
-  const btn = document.getElementById('btnSendSummary'); if(btn){ btn.disabled=true; btn.textContent='Sending…'; }
-  try{
-    const payload = { action:'sendSummary', to, cc, date: todayStr(), rows: summaryRows };
-    const res = await fetch(url, { method:'POST', headers:{'Content-Type':'text/plain;charset=utf-8'}, body: JSON.stringify(payload) });
-    const data = await res.json();
-    if(data.ok){
-      hint.textContent = `Sent to ${to.join(', ')}${cc.length? ' (cc: '+cc.join(', ')+')':''}.`;
-      toast('Summary email sent.');
-    } else { throw new Error(data.error || 'Unknown error'); }
-  }catch(err){
-    hint.textContent = 'Send failed: ' + err.message + '. Make sure apps_script.gs has the sendSummary handler and is redeployed.';
-    toast('Email send failed.', true);
-  }
-  if(btn){ btn.disabled=false; btn.textContent='Send Summary Now'; }
-}
-document.getElementById('btnSendSummary').addEventListener('click', sendSummaryEmail);
-document.getElementById('btnEmailNow').addEventListener('click', sendSummaryEmail);
-
-/* ---------------- init ---------------- */
-document.getElementById('moveDate').value = todayStr();
-document.getElementById('filterFrom').value = '';
-renderAll();
-if(state.sheetUrl){ pullFromSheet(true); }
+/* ---------- boot ---------- */
+window.matchMedia('(max-width:820px)').addEventListener('change', () => { if (S.loaded) render(); });
+if (TOKEN && SESSION) startApp(); else showLogin();
 </script>
 </body>
 </html>
